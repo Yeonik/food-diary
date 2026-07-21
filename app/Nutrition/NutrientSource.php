@@ -16,6 +16,12 @@ enum NutrientSource: string
     case Usda = 'usda';
     case OpenFoodFacts = 'open_food_facts';
 
+    // A value the user typed themselves — e.g. read off a package label. The
+    // person vouches for it and the model invented nothing, so it is verified,
+    // not an estimate. The label says only what the app can attest (a human
+    // entered it), never that it came from a label — which it cannot verify.
+    case Manual = 'manual';
+
     // The model's own guess. Visually distinct, never counted as verified.
     case Estimated = 'estimated';
 
@@ -25,6 +31,7 @@ enum NutrientSource: string
             self::PersonalLibrary => 'Personal library',
             self::Usda => 'USDA FoodData Central',
             self::OpenFoodFacts => 'Open Food Facts',
+            self::Manual => 'Entered by hand',
             self::Estimated => 'Estimated (unverified)',
         };
     }

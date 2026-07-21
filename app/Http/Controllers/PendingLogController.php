@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Nutrition\MealLogService;
 use App\Nutrition\MealType;
+use App\Nutrition\NutrientProfile;
+use App\Nutrition\NutrientSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,8 +46,18 @@ class PendingLogController extends Controller
             'date' => ['nullable', 'date'],
             'items' => ['required', 'array'],
             'items.*.include' => ['nullable', 'boolean'],
-            'items.*.candidate' => ['nullable', 'integer', 'min:0'],
+            // Either a numeric candidate index or the "manual" sentinel — the
+            // package-label path, where the numbers below are used instead.
+            'items.*.candidate' => ['nullable', 'regex:/^(manual|\d+)$/'],
             'items.*.grams' => ['nullable', 'numeric', 'min:0.1', 'max:5000'],
+            // Hand-entered values, per 100 g: macros cap at 100, energy a little
+            // above pure fat (9 kcal/g). Required only when "manual" is chosen,
+            // enforced per included item below so an incomplete row is rejected.
+            'items.*.manual.name' => ['nullable', 'string', 'max:255'],
+            'items.*.manual.kcal' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'items.*.manual.protein' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.manual.fat' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.manual.carbs' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $pending = $request->session()->get(self::SESSION_KEY);
@@ -58,6 +70,28 @@ class PendingLogController extends Controller
             ? CarbonImmutable::parse((string) $validated['date'])->setTimeFrom(CarbonImmutable::now())
             : CarbonImmutable::now();
 
+        // First pass: reject an incomplete manual row before anything is
+        // written, so a bad entry never leaves a half-logged meal behind.
+        foreach ($validated['items'] as $index => $choice) {
+            if (empty($choice['include']) || ($choice['candidate'] ?? null) !== 'manual') {
+                continue;
+            }
+
+            $manual = is_array($choice['manual'] ?? null) ? $choice['manual'] : [];
+
+            foreach (['kcal', 'protein', 'fat', 'carbs'] as $field) {
+                if (($manual[$field] ?? null) === null || $manual[$field] === '') {
+                    return back()
+                        ->withErrors(["items.{$index}.manual.{$field}" => 'Fill in every value per 100 g from the label.'])
+                        ->withInput();
+                }
+            }
+        }
+
+        // Second pass: commit. Manual numbers come from the form by design (the
+        // user is the source, entering label values on purpose, attributed to
+        // NutrientSource::Manual); candidate numbers still come only from the
+        // server-built payload — never the form.
         $logged = 0;
 
         foreach ($validated['items'] as $index => $choice) {
@@ -66,14 +100,31 @@ class PendingLogController extends Controller
             }
 
             $item = $pending['items'][$index] ?? null;
-            $candidateIndex = (int) ($choice['candidate'] ?? 0);
-            $candidate = is_array($item) ? ($item['candidates'][$candidateIndex] ?? null) : null;
-
-            if ($candidate === null) {
+            if (! is_array($item)) {
                 continue;
             }
 
             $grams = (float) ($choice['grams'] ?? $item['grams']);
+
+            if (($choice['candidate'] ?? null) === 'manual') {
+                $log->commitManual(
+                    $this->manualName($choice, (string) $item['name']),
+                    $this->manualProfile($choice),
+                    $grams,
+                    $meal,
+                    $loggedAt,
+                );
+                $logged++;
+
+                continue;
+            }
+
+            $candidateIndex = (int) ($choice['candidate'] ?? 0);
+            $candidate = $item['candidates'][$candidateIndex] ?? null;
+            if ($candidate === null) {
+                continue;
+            }
+
             $log->commit($candidate, (string) $item['name'], $grams, $meal, $loggedAt);
             $logged++;
         }
@@ -88,6 +139,40 @@ class PendingLogController extends Controller
         return redirect()
             ->route('diary.index', ['date' => $loggedAt->toDateString()])
             ->with('status', $logged === 1 ? 'Logged one item.' : "Logged {$logged} items.");
+    }
+
+    /**
+     * The edited name for a hand-entered row, falling back to the recognised
+     * name when the user left it untouched or blank.
+     *
+     * @param  array<string, mixed>  $choice
+     */
+    private function manualName(array $choice, string $fallback): string
+    {
+        $manual = is_array($choice['manual'] ?? null) ? $choice['manual'] : [];
+        $name = trim((string) ($manual['name'] ?? ''));
+
+        return $name !== '' ? $name : $fallback;
+    }
+
+    /**
+     * A per-100 g profile from the label values the user typed. Tagged
+     * {@see NutrientSource::Manual} — verified, and honestly the person's, never
+     * a database source. Completeness is enforced before this is reached.
+     *
+     * @param  array<string, mixed>  $choice
+     */
+    private function manualProfile(array $choice): NutrientProfile
+    {
+        $manual = is_array($choice['manual'] ?? null) ? $choice['manual'] : [];
+
+        return new NutrientProfile(
+            kcal: (float) ($manual['kcal'] ?? 0),
+            proteinG: (float) ($manual['protein'] ?? 0),
+            fatG: (float) ($manual['fat'] ?? 0),
+            carbsG: (float) ($manual['carbs'] ?? 0),
+            source: NutrientSource::Manual,
+        );
     }
 
     /**

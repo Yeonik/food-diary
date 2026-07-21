@@ -58,10 +58,47 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="muted">No matches. Add it to the library manually instead.</td></tr>
+                            <tr><td colspan="4" class="muted">No matches — enter the values from the label below.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
+
+                <div class="manual-entry" style="margin-top:12px">
+                    <label>
+                        <input type="radio" name="items[{{ $i }}][candidate]" value="manual" @checked($item['candidates'] === [])>
+                        Enter values from the label
+                        <span class="badge">Entered by hand</span>
+                    </label>
+                    <p class="muted" style="margin:4px 0 8px">
+                        Verified, not an estimate: you read these off the package and the
+                        model invented nothing. Per 100&nbsp;g.
+                    </p>
+                    <div class="row">
+                        <div>
+                            <label>Name</label>
+                            <input type="text" name="items[{{ $i }}][manual][name]" value="{{ old("items.$i.manual.name", $item['name']) }}">
+                        </div>
+                        <div>
+                            <label>kcal</label>
+                            <input type="number" step="0.1" min="0" max="1000" name="items[{{ $i }}][manual][kcal]" value="{{ old("items.$i.manual.kcal") }}">
+                        </div>
+                        <div>
+                            <label>Protein</label>
+                            <input type="number" step="0.1" min="0" max="100" name="items[{{ $i }}][manual][protein]" value="{{ old("items.$i.manual.protein") }}">
+                        </div>
+                        <div>
+                            <label>Fat</label>
+                            <input type="number" step="0.1" min="0" max="100" name="items[{{ $i }}][manual][fat]" value="{{ old("items.$i.manual.fat") }}">
+                        </div>
+                        <div>
+                            <label>Carbs</label>
+                            <input type="number" step="0.1" min="0" max="100" name="items[{{ $i }}][manual][carbs]" value="{{ old("items.$i.manual.carbs") }}">
+                        </div>
+                    </div>
+                    @foreach (['kcal', 'protein', 'fat', 'carbs'] as $field)
+                        @error("items.$i.manual.$field")<p class="estimate-tag">{{ $message }}</p>@enderror
+                    @endforeach
+                </div>
             </div>
         @endforeach
 

@@ -92,6 +92,31 @@ class MealLogService
     }
 
     /**
+     * Persist one logged entry from values the user typed themselves — the
+     * package-label path. This is the one deliberate exception to "numbers come
+     * from the server payload, never the form": here the human *is* the source
+     * and is entering the numbers on purpose. They are attributed to
+     * {@see NutrientSource::Manual} ("Entered by hand"), never to a database
+     * source — so a tampered form can only ever produce an honestly-labelled
+     * hand-entered value, never a forged USDA or library number. Verified, it is
+     * promoted to the library and resolves from tier 1 next time.
+     */
+    public function commitManual(
+        string $name,
+        NutrientProfile $profile,
+        float $grams,
+        MealType $meal,
+        CarbonInterface $loggedAt,
+    ): MealEntry {
+        $foodItemId = $this->promoteToLibrary($name, $profile, NutrientSource::Manual);
+
+        $entry = MealEntry::fromPortion($profile->forGrams($grams), $name, $meal, $loggedAt, $foodItemId);
+        $entry->save();
+
+        return $entry;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function encodeCandidate(NutrientMatch $match): array
