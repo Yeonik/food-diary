@@ -74,7 +74,9 @@ class GeminiRecogniserTest extends TestCase
             'forbidden (403)' => [403, 'API key'],
             'unknown model (404)' => [404, 'model was not found'],
             'zero quota (429)' => [429, 'no quota for the configured model'],
-            'server error (500)' => [500, 'returned an error'],
+            'overloaded (503)' => [503, 'temporarily unavailable'],
+            'server error (500)' => [500, 'temporarily unavailable'],
+            'unmapped status (418)' => [418, 'returned an error'],
         ];
     }
 

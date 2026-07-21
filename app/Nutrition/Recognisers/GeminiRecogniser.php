@@ -105,6 +105,10 @@ class GeminiRecogniser implements FoodRecogniser
                 401, 403 => 'The recogniser rejected the API key.',
                 404 => 'The configured recogniser model was not found; check GEMINI_MODEL.',
                 429 => 'The recogniser has no quota for the configured model; check the plan or GEMINI_MODEL.',
+                // A 5xx is Google's side, not ours: the model is overloaded
+                // ("UNAVAILABLE, high demand"). Transient and worth retrying, so
+                // say so rather than implying the request or config is at fault.
+                500, 502, 503, 504 => 'The recogniser is temporarily unavailable (the model is busy); please try again shortly.',
                 default => 'The recogniser returned an error.',
             });
         }
