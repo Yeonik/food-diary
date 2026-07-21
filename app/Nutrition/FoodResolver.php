@@ -33,9 +33,11 @@ class FoodResolver
 
     public function resolve(SearchTerms $terms, ?NutrientProfile $estimatedFallback = null): Resolution
     {
-        // Tier 1: the personal library, a local query, always first. Searched by
-        // every term so an item stored under either language is still found.
-        $libraryMatches = $this->searchLibrary($terms);
+        // Tier 1: the personal library, a local query, always first. Matched
+        // loosely on shared tokens across each item's names and aliases, so an
+        // item survives the model rephrasing the package; capped and ranked
+        // inside the source. These are offered, never auto-selected.
+        $libraryMatches = $this->library->matchesFor($terms);
 
         // Tier 2: the external APIs, fired concurrently so their latencies
         // overlap instead of adding up.
@@ -58,20 +60,6 @@ class FoodResolver
             estimated: $estimated,
             notices: $notices,
         );
-    }
-
-    /**
-     * @return list<NutrientMatch>
-     */
-    private function searchLibrary(SearchTerms $terms): array
-    {
-        $matches = [];
-
-        foreach ($terms->all() as $term) {
-            $matches = [...$matches, ...$this->library->search($term)];
-        }
-
-        return $this->dedupe($matches);
     }
 
     /**

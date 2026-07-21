@@ -70,6 +70,17 @@ class FoodItem extends Model
         return $this->hasMany(RecipeIngredient::class, 'recipe_id');
     }
 
+    /**
+     * Names this item has also been recognised by — accumulated on confirmation
+     * so future lookups match the ways the model actually phrases the product.
+     *
+     * @return HasMany<FoodItemAlias, $this>
+     */
+    public function aliases(): HasMany
+    {
+        return $this->hasMany(FoodItemAlias::class);
+    }
+
     public function isRecipe(): bool
     {
         return $this->kind === FoodItemKind::Recipe;

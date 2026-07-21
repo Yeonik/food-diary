@@ -109,17 +109,18 @@ class BilingualRecognitionTest extends TestCase
         $this->assertSame('Победа', $entry->name);
         $this->assertSame(NutrientSource::OpenFoodFacts, $entry->source);
 
-        // The library item carries both names — found by either next time.
+        // The library item carries both names and the barcode — found by either
+        // name next time, and exactly by the barcode.
         $item = FoodItem::query()->firstOrFail();
         $this->assertSame('Победа', $item->name);
         $this->assertSame('Pobeda chocolate', $item->alt_name);
+        $this->assertSame('4600000000001', $item->external_id);
         $this->assertSame(ProfileOrigin::OpenFoodFacts, $item->origin);
     }
 
-    public function test_a_single_language_library_item_is_backfilled_not_duplicated(): void
+    public function test_a_confirmed_library_match_learns_the_recognised_name_as_an_alias(): void
     {
-        // A pre-existing item stored under its English name only (as if created
-        // before the second column existed).
+        // A pre-existing item stored under its English name only.
         $existing = FoodItem::factory()->direct(kcal: 460, protein: 9, fat: 29, carbs: 42)
             ->create(['name' => 'Pobeda chocolate', 'alt_name' => null]);
 
@@ -130,19 +131,19 @@ class BilingualRecognitionTest extends TestCase
         $this->bindRecogniser();
         $this->uploadPhoto();
 
-        // Candidate 0 is the library match; confirming it backfills the Russian
-        // name onto the same row rather than creating a second one.
+        // Candidate 0 is the library match; confirming it records the Russian
+        // phrasing as an alias on the same row rather than creating a second one.
         $this->post(route('log.confirm.store'), [
             'meal' => 'snack',
             'items' => [['include' => 1, 'candidate' => 0, 'grams' => 100]],
         ])->assertRedirect();
 
         $this->assertSame(1, FoodItem::count());
-        $this->assertSame('Победа', $existing->fresh()?->alt_name);
+        $this->assertTrue($existing->fresh()?->aliases->pluck('name')->contains('Победа'));
         $this->assertSame(NutrientSource::PersonalLibrary, MealEntry::query()->firstOrFail()->source);
     }
 
-    public function test_backfill_never_overwrites_a_name_the_user_set(): void
+    public function test_a_curated_alt_name_is_left_untouched_by_recognition(): void
     {
         $existing = FoodItem::factory()->direct(kcal: 460, protein: 9, fat: 29, carbs: 42)
             ->create(['name' => 'Pobeda chocolate', 'alt_name' => 'Победа (my note)']);
@@ -159,7 +160,7 @@ class BilingualRecognitionTest extends TestCase
             'items' => [['include' => 1, 'candidate' => 0, 'grams' => 100]],
         ])->assertRedirect();
 
-        // The hand-set alt name stands; recognition does not clobber it.
+        // Recognition learns aliases but never rewrites the name the user curated.
         $this->assertSame('Победа (my note)', $existing->fresh()?->alt_name);
     }
 }

@@ -10,6 +10,11 @@ namespace App\Nutrition;
  * (USDA fdcId, Open Food Facts barcode). The source is carried by the profile,
  * so a match is always self-describing when shown in a list for the user to
  * choose from.
+ *
+ * {@see $matchedVia} explains a loose personal-library match: the stored name or
+ * alias that a recognised term matched, when it was not the item's own name. It
+ * is shown alongside the full name, never in place of it, so the user can tell
+ * which stored variant surfaced.
  */
 final readonly class NutrientMatch
 {
@@ -17,6 +22,7 @@ final readonly class NutrientMatch
         public string $description,
         public NutrientProfile $profile,
         public ?string $externalId = null,
+        public ?string $matchedVia = null,
     ) {}
 
     public function source(): NutrientSource

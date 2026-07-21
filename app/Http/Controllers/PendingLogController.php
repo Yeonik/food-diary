@@ -59,6 +59,9 @@ class PendingLogController extends Controller
             'items.*.manual.protein' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.manual.fat' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.manual.carbs' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            // Optional barcode: the stable id that makes this product match
+            // exactly next time, no camera needed. Digits and hyphens only.
+            'items.*.manual.barcode' => ['nullable', 'string', 'max:64', 'regex:/^[0-9-]+$/'],
         ]);
 
         $pending = $request->session()->get(self::SESSION_KEY);
@@ -114,6 +117,7 @@ class PendingLogController extends Controller
                     $grams,
                     $meal,
                     $loggedAt,
+                    $this->manualBarcode($choice),
                 );
                 $logged++;
 
@@ -161,6 +165,19 @@ class PendingLogController extends Controller
         $name = trim((string) ($manual['name'] ?? ''));
 
         return $name !== '' ? $name : $fallback;
+    }
+
+    /**
+     * The optional barcode from a hand-entered row, or null.
+     *
+     * @param  array<string, mixed>  $choice
+     */
+    private function manualBarcode(array $choice): ?string
+    {
+        $manual = is_array($choice['manual'] ?? null) ? $choice['manual'] : [];
+        $barcode = trim((string) ($manual['barcode'] ?? ''));
+
+        return $barcode !== '' ? $barcode : null;
     }
 
     /**

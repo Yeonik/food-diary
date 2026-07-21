@@ -43,11 +43,17 @@
                     <thead><tr><th></th><th>Match</th><th>Source</th><th>per 100 g</th></tr></thead>
                     <tbody>
                         @forelse ($item['candidates'] as $c => $candidate)
-                            <tr class="{{ $candidate['verified'] ? '' : 'estimate' }}">
+                            @php $isLibrary = ($candidate['source'] ?? null) === 'personal_library'; @endphp
+                            <tr class="{{ $candidate['verified'] ? '' : 'estimate' }}" @if ($isLibrary) style="box-shadow:inset 3px 0 0 currentColor" @endif>
                                 <td><input type="radio" name="items[{{ $i }}][candidate]" value="{{ $c }}" @checked($c === 0)></td>
-                                <td>{{ $candidate['label'] }}</td>
                                 <td>
-                                    <span class="badge">{{ $candidate['source_label'] }}</span>
+                                    @if ($isLibrary)<strong>{{ $candidate['label'] }}</strong>@else{{ $candidate['label'] }}@endif
+                                    @if (! empty($candidate['matched_via']))
+                                        <div class="muted" style="font-size:.85em">matched on &ldquo;{{ $candidate['matched_via'] }}&rdquo;</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($isLibrary)<span class="badge">Your library</span>@else<span class="badge">{{ $candidate['source_label'] }}</span>@endif
                                     @unless ($candidate['verified'])<span class="estimate-tag">unverified</span>@endunless
                                 </td>
                                 <td class="muted">
@@ -95,7 +101,14 @@
                             <input type="number" step="0.1" min="0" max="100" name="items[{{ $i }}][manual][carbs]" value="{{ old("items.$i.manual.carbs") }}">
                         </div>
                     </div>
-                    @foreach (['kcal', 'protein', 'fat', 'carbs'] as $field)
+                    <div class="row" style="margin-top:8px">
+                        <div>
+                            <label>Barcode <span class="muted">(optional)</span></label>
+                            <input type="text" name="items[{{ $i }}][manual][barcode]" value="{{ old("items.$i.manual.barcode") }}" inputmode="numeric">
+                            <p class="muted" style="margin:4px 0 0">Type it once and this product matches exactly next time.</p>
+                        </div>
+                    </div>
+                    @foreach (['kcal', 'protein', 'fat', 'carbs', 'barcode'] as $field)
                         @error("items.$i.manual.$field")<p class="estimate-tag">{{ $message }}</p>@enderror
                     @endforeach
                 </div>

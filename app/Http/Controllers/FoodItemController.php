@@ -49,6 +49,7 @@ class FoodItemController extends Controller
         FoodItem::create([
             'name' => $validated['name'],
             'alt_name' => $validated['alt_name'] ?? null,
+            'external_id' => $validated['external_id'] ?? null,
             'kind' => FoodItemKind::Direct->value,
             'origin' => ProfileOrigin::Manual->value,
             'kcal_per_100g' => $validated['kcal_per_100g'],
@@ -191,16 +192,19 @@ class FoodItemController extends Controller
     }
 
     /**
-     * @return array{name: string, alt_name: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float}
+     * @return array{name: string, alt_name: string|null, external_id: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float}
      */
     private function validateDirect(Request $request): array
     {
-        /** @var array{name: string, alt_name: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float} $validated */
+        /** @var array{name: string, alt_name: string|null, external_id: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float} $validated */
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             // The same food's name in another language, optional — lets a photo
             // resolve it by either name later.
             'alt_name' => ['nullable', 'string', 'max:255'],
+            // Barcode: the stable id that makes this product match exactly, no
+            // camera needed. Stored as external_id, digits and hyphens only.
+            'external_id' => ['nullable', 'string', 'max:64', 'regex:/^[0-9-]+$/'],
             'kcal_per_100g' => ['required', 'numeric', 'min:0'],
             'protein_g_per_100g' => ['required', 'numeric', 'min:0'],
             'fat_g_per_100g' => ['required', 'numeric', 'min:0'],

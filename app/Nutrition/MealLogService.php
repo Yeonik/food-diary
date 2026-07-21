@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Nutrition;
 
 use App\Models\FoodItem;
+use App\Models\FoodItemAlias;
 use App\Models\MealEntry;
 use Carbon\CarbonInterface;
 
@@ -94,14 +95,16 @@ class MealLogService
 
         if ($foodItemId === null && $source !== NutrientSource::Estimated) {
             // Confirming a real (non-estimated) match that is not already in the
-            // library promotes it there, storing both names, so lower tiers get
+            // library promotes it there — with both names and the source's stable
+            // id (an Open Food Facts barcode, a USDA fdcId) — so lower tiers get
             // used less over time. Estimates are never promoted.
-            $foodItemId = $this->promoteToLibrary($terms->display(), $terms->alt(), $profile, $source);
+            $externalId = is_string($candidate['external_id'] ?? null) ? $candidate['external_id'] : null;
+            $foodItemId = $this->promoteToLibrary($terms->display(), $terms->alt(), $externalId, $profile, $source);
         } elseif ($foodItemId !== null) {
-            // A library item answered: if recognition gave a name it does not yet
-            // carry, fill its empty second column so it is found by either name
-            // next time. Pre-migration single-language items heal themselves.
-            $this->backfillAltName($foodItemId, $terms);
+            // A library item answered: remember the phrasing that found it as an
+            // alias, so the item accrues the ways the model actually names it.
+            // Only confirmed phrasings are stored — never a bare recognition.
+            $this->recordAliases($foodItemId, $terms);
         }
 
         $entry = MealEntry::fromPortion($profile->forGrams($grams), $terms->display(), $meal, $loggedAt, $foodItemId);
@@ -126,9 +129,12 @@ class MealLogService
         float $grams,
         MealType $meal,
         CarbonInterface $loggedAt,
+        ?string $barcode = null,
     ): MealEntry {
         // A hand-typed entry carries a single name; there is no second language.
-        $foodItemId = $this->promoteToLibrary($name, null, $profile, NutrientSource::Manual);
+        // A barcode, if the user typed one, becomes the item's stable id — the
+        // exact key that makes matching reliable for a product no database knows.
+        $foodItemId = $this->promoteToLibrary($name, null, $barcode, $profile, NutrientSource::Manual);
 
         $entry = MealEntry::fromPortion($profile->forGrams($grams), $name, $meal, $loggedAt, $foodItemId);
         $entry->save();
@@ -150,6 +156,7 @@ class MealLogService
             'fat' => $match->profile->fatG,
             'carbs' => $match->profile->carbsG,
             'verified' => $match->source()->isVerified(),
+            'matched_via' => $match->matchedVia,
             // A personal-library match carries the item id in externalId.
             'food_item_id' => $match->source() === NutrientSource::PersonalLibrary && $match->externalId !== null
                 ? (int) $match->externalId
@@ -158,7 +165,7 @@ class MealLogService
         ];
     }
 
-    private function promoteToLibrary(string $name, ?string $altName, NutrientProfile $profile, NutrientSource $source): int
+    private function promoteToLibrary(string $name, ?string $altName, ?string $externalId, NutrientProfile $profile, NutrientSource $source): int
     {
         $origin = match ($source) {
             NutrientSource::Usda => ProfileOrigin::Usda,
@@ -169,6 +176,7 @@ class MealLogService
         $item = FoodItem::create([
             'name' => $name,
             'alt_name' => $altName,
+            'external_id' => $externalId,
             'kind' => FoodItemKind::Direct->value,
             'origin' => $origin->value,
             'kcal_per_100g' => $profile->kcal,
@@ -180,29 +188,52 @@ class MealLogService
         return $item->id;
     }
 
+    /** How many learned aliases one item keeps; oldest fall off past this. */
+    private const MAX_ALIASES = 10;
+
     /**
-     * Fill a matched library item's empty second name with a recognition term it
-     * does not already carry. Only ever writes into an empty column — a name the
-     * user set by hand is never overwritten.
+     * Remember each recognised term as an alias of a confirmed library item,
+     * unless the item already carries it as a name, alt name or alias (compared
+     * case-insensitively). Bounded, so a long tail of phrasings cannot grow
+     * without limit. Called only on confirmation — a bad recognition is never
+     * recorded, so it can never start pulling in the wrong product.
      */
-    private function backfillAltName(int $foodItemId, SearchTerms $terms): void
+    private function recordAliases(int $foodItemId, SearchTerms $terms): void
     {
-        $item = FoodItem::find($foodItemId);
+        $item = FoodItem::with('aliases')->find($foodItemId);
         if ($item === null) {
             return;
         }
 
-        if (is_string($item->alt_name) && trim($item->alt_name) !== '') {
-            return;
-        }
+        $known = [$item->name, $item->alt_name, ...$item->aliases->pluck('name')->all()];
+        $known = array_map(
+            static fn ($name): string => is_string($name) ? mb_strtolower(trim($name)) : '',
+            $known,
+        );
 
         foreach ($terms->all() as $term) {
-            if (strcasecmp($term, trim($item->name)) !== 0) {
-                $item->alt_name = $term;
-                $item->save();
-
-                return;
+            if (in_array(mb_strtolower(trim($term)), $known, true)) {
+                continue;
             }
+
+            $item->aliases()->create(['name' => $term]);
+            $known[] = mb_strtolower(trim($term));
         }
+
+        $this->pruneAliases($item->id);
+    }
+
+    private function pruneAliases(int $foodItemId): void
+    {
+        $keep = FoodItemAlias::query()
+            ->where('food_item_id', $foodItemId)
+            ->orderByDesc('id')
+            ->limit(self::MAX_ALIASES)
+            ->pluck('id');
+
+        FoodItemAlias::query()
+            ->where('food_item_id', $foodItemId)
+            ->whereNotIn('id', $keep)
+            ->delete();
     }
 }

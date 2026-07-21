@@ -79,7 +79,7 @@ class MealPhotoFlowTest extends TestCase
         $this->get(route('log.confirm'))
             ->assertOk()
             ->assertSee('Grilled chicken breast')
-            ->assertSee('Personal library');
+            ->assertSee('Your library');
 
         $response = $this->post(route('log.confirm.store'), [
             'meal' => 'lunch',
