@@ -17,7 +17,9 @@ return [
 
     'gemini' => [
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        // `?:`, not a second arg: compose injects an empty GEMINI_MODEL when the
+        // var is unset, and an empty string must fall back to the default too.
+        'model' => env('GEMINI_MODEL') ?: 'gemini-3.5-flash',
         // Secret: read from the environment only, never hard-coded.
         'key' => env('GEMINI_API_KEY'),
     ],

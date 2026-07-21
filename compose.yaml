@@ -18,6 +18,10 @@ services:
       # no key the app runs but photo recognition fails loudly (it never invents
       # a result). Manual entry, the library, weight and goals work without it.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Some Gemini models answer 429 (free-tier quota 0) or 404 (hidden from new
+      # keys); GEMINI_MODEL picks one the key can reach. Falls back to the config
+      # default when unset.
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
       # Optional access password. A bcrypt hash contains `$`, which compose
       # interpolation treats specially — so in .env each `$` is doubled to `$$`

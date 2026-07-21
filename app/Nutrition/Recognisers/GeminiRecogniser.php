@@ -80,21 +80,27 @@ class GeminiRecogniser implements FoodRecogniser
             throw new RecognitionFailedException('The recogniser could not be reached.');
         }
 
-        if ($response->status() === 429) {
-            Log::warning('Gemini recognition rate limited', ['status' => 429]);
-
-            throw new RecognitionFailedException('The recogniser is rate limited; please try again shortly.');
-        }
-
         if (! $response->successful()) {
             // The error body carries Google's diagnostic (and never the key,
-            // which is in the header) — log it so a rejected key is visible.
+            // which is in the header) — log it for every failure, so a rejected
+            // key, a missing model or a zero free-tier quota is all visible.
             Log::warning('Gemini recognition error', [
                 'status' => $response->status(),
                 'body' => mb_substr($response->body(), 0, 500),
             ]);
 
-            throw new RecognitionFailedException('The recogniser returned an error.');
+            // Each status names its own cause. A message that blames the wrong
+            // thing (e.g. "try again shortly" for a structural quota of zero) is
+            // worse than a generic one — it sends the operator to fix the wrong
+            // knob. Note that a 429 here is usually a free-tier limit of 0 on the
+            // configured model, not a transient burst, so it points at the model.
+            throw new RecognitionFailedException(match ($response->status()) {
+                400 => 'The recogniser rejected the request as malformed.',
+                401, 403 => 'The recogniser rejected the API key.',
+                404 => 'The configured recogniser model was not found; check GEMINI_MODEL.',
+                429 => 'The recogniser has no quota for the configured model; check the plan or GEMINI_MODEL.',
+                default => 'The recogniser returned an error.',
+            });
         }
 
         $text = $response->json('candidates.0.content.parts.0.text');
