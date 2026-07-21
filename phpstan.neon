@@ -1,0 +1,9 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - app
+    # No baseline and no @phpstan-ignore: the brief requires level 6 to stay
+    # green on its own. If analysis fails, the code changes, not this file.

@@ -1,0 +1,41 @@
+# --- Laravel ---
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+.env
+.env.backup
+.env.production
+.phpstan.cache
+/.phpunit.cache
+/.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+
+# --- Editors / IDE ---
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+/_ide_helper.php
+/_ide_helper_models.php
+/.phpstorm.meta.php
+
+# --- Local database & uploaded photos ---
+/database/*.sqlite
+/database/*.sqlite-journal
+/storage/app/private/photos
+
+# --- Internal working documents ---
+# Ignore root-level markdown as a class rather than naming the private files:
+# listing a private file by name in a public file is itself a disclosure.
+# The public README is the single intended exception.
+/*.md
+!/README.md
