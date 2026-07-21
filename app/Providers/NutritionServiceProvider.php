@@ -38,6 +38,7 @@ class NutritionServiceProvider extends ServiceProvider
                 $this->string('nutrition.gemini.base_url'),
                 $this->string('nutrition.gemini.model'),
                 $this->nullableString('nutrition.gemini.key'),
+                (int) config('nutrition.gemini.timeout', 60),
             );
         });
 

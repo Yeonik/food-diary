@@ -9,6 +9,10 @@
         (including GPS) is stripped before it leaves this machine, and the file is
         deleted once you confirm the entry.
     </p>
+    <p class="muted">
+        Recognition usually takes a few seconds. When the model is busy it retries,
+        so it can take up to two minutes — the page will wait, that is not an error.
+    </p>
 
     <form method="post" action="{{ route('log.photo.store') }}" enctype="multipart/form-data" class="panel">
         @csrf

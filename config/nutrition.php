@@ -22,6 +22,9 @@ return [
         'model' => env('GEMINI_MODEL') ?: 'gemini-3.5-flash',
         // Secret: read from the environment only, never hard-coded.
         'key' => env('GEMINI_API_KEY'),
+        // Per-attempt timeout in seconds. A photo of a busy model can be slow to
+        // answer, so this is generous; recognition retries a couple of times.
+        'timeout' => (int) env('GEMINI_TIMEOUT', 60),
     ],
 
     'usda' => [
