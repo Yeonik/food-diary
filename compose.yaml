@@ -1,10 +1,11 @@
 # `docker compose up` builds the image, migrates a SQLite database on a
-# persisted volume, and serves the diary at http://localhost:8000.
+# persisted volume, and serves the diary. The published host port is APP_PORT
+# (default 8000); change it in .env if that port is taken.
 services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
       APP_ENV: local
       APP_DEBUG: "false"
@@ -18,6 +19,9 @@ services:
       # a result). Manual entry, the library, weight and goals work without it.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
+      # Optional access password. A bcrypt hash contains `$`, which compose
+      # interpolation treats specially — so in .env each `$` is doubled to `$$`
+      # and compose restores it to a single `$` here.
       APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}
     volumes:
       # Persist the database and uploaded photos across restarts.

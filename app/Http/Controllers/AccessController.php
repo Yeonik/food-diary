@@ -25,16 +25,29 @@ class AccessController extends Controller
 
     public function unlock(Request $request): RedirectResponse
     {
-        $password = config('nutrition.access_password');
+        $configured = config('nutrition.access_password');
         $given = (string) $request->input('password', '');
 
-        if (is_string($password) && $password !== '' && hash_equals($password, $given)) {
+        if (is_string($configured) && $configured !== '' && $this->matches($configured, $given)) {
             $request->session()->put('unlocked', true);
 
             return redirect()->intended(route('diary.index'));
         }
 
         return back()->withErrors(['password' => 'That password does not match.']);
+    }
+
+    /**
+     * A bcrypt hash (the recommended form, never a plaintext secret at rest) is
+     * verified with password_verify; a plain value is compared in constant time.
+     */
+    private function matches(string $configured, string $given): bool
+    {
+        if (preg_match('/^\$2[aby]\$/', $configured) === 1) {
+            return password_verify($given, $configured);
+        }
+
+        return hash_equals($configured, $given);
     }
 
     private function isLocked(): bool

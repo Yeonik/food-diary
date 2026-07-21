@@ -20,6 +20,10 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- Keep the suite hermetic: a local .env must not lock the app during
+             tests. (The recogniser is bound to the fake in the test env by the
+             service provider, independent of any config.) -->
+        <env name="APP_ACCESS_PASSWORD" value=""/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

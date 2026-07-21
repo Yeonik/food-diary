@@ -30,4 +30,16 @@ class AccessGateTest extends TestCase
         $this->post(route('unlock'), ['password' => 'letmein']);
         $this->get(route('diary.index'))->assertOk();
     }
+
+    public function test_a_bcrypt_hashed_password_is_accepted(): void
+    {
+        // The recommended form: a hash at rest, never the plaintext secret.
+        config(['nutrition.access_password' => password_hash('letmein', PASSWORD_BCRYPT)]);
+
+        $this->get(route('diary.index'))->assertRedirect(route('unlock.show'));
+        $this->post(route('unlock'), ['password' => 'nope'])->assertSessionHasErrors('password');
+
+        $this->post(route('unlock'), ['password' => 'letmein']);
+        $this->get(route('diary.index'))->assertOk();
+    }
 }
