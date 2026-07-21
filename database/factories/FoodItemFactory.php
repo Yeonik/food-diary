@@ -23,6 +23,7 @@ class FoodItemFactory extends Factory
     {
         return [
             'name' => fake()->unique()->words(2, true),
+            'alt_name' => null,
             'kind' => FoodItemKind::Direct->value,
             'origin' => ProfileOrigin::Manual->value,
             'external_id' => null,

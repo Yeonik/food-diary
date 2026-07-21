@@ -31,10 +31,16 @@ class GeminiRecogniser implements FoodRecogniser
         distinct dish visible in the photo and estimate its portion in grams.
         Give a rough macro guess per 100 g as a fallback only.
 
+        Give two names. "name" is an English name, used to search an
+        English-language database. "native_name" is the name exactly as printed
+        on the packaging in its original language (for example Russian) — set it
+        to null if the item is already English or has no distinct packaged name.
+
         Reply with a JSON array. Each element:
-        {"name": string, "grams": number, "confidence": number 0..1,
-         "kcal_per_100g": number, "protein_g_per_100g": number,
-         "fat_g_per_100g": number, "carbs_g_per_100g": number}
+        {"name": string, "native_name": string or null, "grams": number,
+         "confidence": number 0..1, "kcal_per_100g": number,
+         "protein_g_per_100g": number, "fat_g_per_100g": number,
+         "carbs_g_per_100g": number}
         Return only the JSON array.
         TXT;
 
@@ -140,6 +146,7 @@ class GeminiRecogniser implements FoodRecogniser
                 name: $row['name'],
                 estimatedGrams: $this->number($row['grams'] ?? null),
                 confidence: $this->number($row['confidence'] ?? null),
+                nativeName: $this->text($row['native_name'] ?? null),
                 estimatedProfile: new NutrientProfile(
                     kcal: $this->number($row['kcal_per_100g'] ?? null),
                     proteinG: $this->number($row['protein_g_per_100g'] ?? null),
@@ -156,5 +163,10 @@ class GeminiRecogniser implements FoodRecogniser
     private function number(mixed $value): float
     {
         return is_numeric($value) ? (float) $value : 0.0;
+    }
+
+    private function text(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 }

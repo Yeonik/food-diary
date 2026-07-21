@@ -9,6 +9,7 @@ use App\Nutrition\NutrientMatch;
 use App\Nutrition\NutrientProfile;
 use App\Nutrition\NutrientSource;
 use App\Nutrition\RemoteRequest;
+use App\Nutrition\SearchTerms;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -36,7 +37,18 @@ class UsdaSource implements RemoteNutritionSource
         return 'usda';
     }
 
-    public function request(string $name): RemoteRequest
+    /**
+     * USDA indexes English food names, so only the English term is searched;
+     * a Russian package name would return nothing useful.
+     *
+     * @return list<RemoteRequest>
+     */
+    public function requestsFor(SearchTerms $terms): array
+    {
+        return [$this->requestFor($terms->english)];
+    }
+
+    private function requestFor(string $name): RemoteRequest
     {
         return new RemoteRequest(
             url: rtrim($this->baseUrl, '/').'/foods/search',
@@ -55,7 +67,7 @@ class UsdaSource implements RemoteNutritionSource
      */
     public function search(string $name): array
     {
-        $request = $this->request($name);
+        $request = $this->requestFor($name);
 
         $response = Http::withHeaders($request->headers)
             ->timeout($request->timeoutSeconds)

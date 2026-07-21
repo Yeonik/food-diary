@@ -28,9 +28,13 @@ class PersonalLibrarySource implements NutritionSource
     public function search(string $name): array
     {
         // Parameterised LIKE — user wildcards only broaden the search, they
-        // never reach the SQL as anything but a bound value.
+        // never reach the SQL as anything but a bound value. Both name columns
+        // are matched, so an item stored under either language is found.
         $items = FoodItem::query()
-            ->where('name', 'like', '%'.$name.'%')
+            ->where(function ($query) use ($name): void {
+                $query->where('name', 'like', '%'.$name.'%')
+                    ->orWhere('alt_name', 'like', '%'.$name.'%');
+            })
             ->orderBy('name')
             ->limit(25)
             ->get();

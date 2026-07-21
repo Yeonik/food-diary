@@ -19,6 +19,7 @@ use RuntimeException;
  *
  * @property int $id
  * @property string $name
+ * @property string|null $alt_name
  * @property FoodItemKind $kind
  * @property ProfileOrigin|null $origin
  * @property string|null $external_id
@@ -34,6 +35,7 @@ class FoodItem extends Model
 
     protected $fillable = [
         'name',
+        'alt_name',
         'kind',
         'origin',
         'external_id',

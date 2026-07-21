@@ -6,6 +6,7 @@ namespace App\Nutrition\Contracts;
 
 use App\Nutrition\NutrientMatch;
 use App\Nutrition\RemoteRequest;
+use App\Nutrition\SearchTerms;
 use Illuminate\Http\Client\Response;
 
 /**
@@ -22,9 +23,13 @@ interface RemoteNutritionSource extends NutritionSource
     public function poolKey(): string;
 
     /**
-     * Describe the lookup request for the given name.
+     * Describe the lookup request(s) for these terms. A source may return more
+     * than one — Open Food Facts searches both the English and native names,
+     * USDA only the English one — and each response is parsed independently.
+     *
+     * @return list<RemoteRequest>
      */
-    public function request(string $name): RemoteRequest;
+    public function requestsFor(SearchTerms $terms): array;
 
     /**
      * Turn a successful response into candidate matches.

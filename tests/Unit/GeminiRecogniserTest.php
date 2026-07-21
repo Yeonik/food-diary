@@ -94,6 +94,30 @@ class GeminiRecogniserTest extends TestCase
         $this->recogniser()->recognise($this->photo());
     }
 
+    public function test_it_parses_a_native_name_when_the_model_gives_one(): void
+    {
+        $modelText = json_encode([
+            ['name' => 'Pobeda chocolate', 'native_name' => 'Победа', 'grams' => 100, 'confidence' => 0.9,
+                'kcal_per_100g' => 460, 'protein_g_per_100g' => 9, 'fat_g_per_100g' => 29, 'carbs_g_per_100g' => 42],
+            ['name' => 'Green tea', 'grams' => 250, 'confidence' => 0.8,
+                'kcal_per_100g' => 1, 'protein_g_per_100g' => 0, 'fat_g_per_100g' => 0, 'carbs_g_per_100g' => 0],
+        ]);
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => $modelText]]]]],
+            ]),
+        ]);
+
+        $items = $this->recogniser()->recognise($this->photo());
+
+        $this->assertCount(2, $items);
+        // The first dish carries both names; the second, with no native_name, is null.
+        $this->assertSame('Pobeda chocolate', $items[0]->name);
+        $this->assertSame('Победа', $items[0]->nativeName);
+        $this->assertNull($items[1]->nativeName);
+    }
+
     public function test_a_429_is_not_reported_as_a_transient_rate_limit(): void
     {
         // A free-tier quota of 0 answers 429, but "try again shortly" would be a

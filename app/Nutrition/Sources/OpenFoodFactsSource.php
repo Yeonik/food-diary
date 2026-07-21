@@ -9,6 +9,7 @@ use App\Nutrition\NutrientMatch;
 use App\Nutrition\NutrientProfile;
 use App\Nutrition\NutrientSource;
 use App\Nutrition\RemoteRequest;
+use App\Nutrition\SearchTerms;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -36,7 +37,19 @@ class OpenFoodFactsSource implements RemoteNutritionSource
         return 'open_food_facts';
     }
 
-    public function request(string $name): RemoteRequest
+    /**
+     * Russian products sit in Open Food Facts under their Russian names, but the
+     * model gives an English one to search USDA with — so both terms are
+     * searched here, and the resolver de-duplicates any product both return.
+     *
+     * @return list<RemoteRequest>
+     */
+    public function requestsFor(SearchTerms $terms): array
+    {
+        return array_map(fn (string $term): RemoteRequest => $this->requestFor($term), $terms->all());
+    }
+
+    private function requestFor(string $name): RemoteRequest
     {
         return new RemoteRequest(
             url: rtrim($this->baseUrl, '/').'/cgi/search.pl',
@@ -57,7 +70,7 @@ class OpenFoodFactsSource implements RemoteNutritionSource
      */
     public function search(string $name): array
     {
-        $request = $this->request($name);
+        $request = $this->requestFor($name);
 
         $response = Http::withHeaders($request->headers)
             ->timeout($request->timeoutSeconds)

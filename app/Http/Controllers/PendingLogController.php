@@ -8,6 +8,7 @@ use App\Nutrition\MealLogService;
 use App\Nutrition\MealType;
 use App\Nutrition\NutrientProfile;
 use App\Nutrition\NutrientSource;
+use App\Nutrition\SearchTerms;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -125,7 +126,14 @@ class PendingLogController extends Controller
                 continue;
             }
 
-            $log->commit($candidate, (string) $item['name'], $grams, $meal, $loggedAt);
+            // Both recognised names travel from the pending payload so the commit
+            // can store or backfill them — the entry itself is named by display().
+            $terms = new SearchTerms(
+                (string) ($item['english'] ?? $item['name']),
+                isset($item['native']) && is_string($item['native']) ? $item['native'] : null,
+            );
+
+            $log->commit($candidate, $terms, $grams, $meal, $loggedAt);
             $logged++;
         }
 

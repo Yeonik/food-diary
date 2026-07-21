@@ -23,13 +23,15 @@ class MealLogService
     public function __construct(private readonly FoodResolver $resolver) {}
 
     /**
-     * Build a pending payload for one food name.
+     * Build a pending payload for one or two search terms. The English and
+     * native names are carried through so the commit step can store both on a
+     * promoted library item, or backfill the one a matched item is missing.
      *
-     * @return array{name: string, grams: float, candidates: list<array<string, mixed>>}
+     * @return array{name: string, grams: float, english: string, native: string|null, candidates: list<array<string, mixed>>}
      */
-    public function pendingForName(string $name, float $grams = 100.0, ?NutrientProfile $estimate = null): array
+    public function pendingForTerms(SearchTerms $terms, float $grams = 100.0, ?NutrientProfile $estimate = null): array
     {
-        $resolution = $this->resolver->resolve($name, $estimate);
+        $resolution = $this->resolver->resolve($terms, $estimate);
 
         $candidates = [];
         foreach ($resolution->candidates() as $match) {
@@ -37,23 +39,35 @@ class MealLogService
         }
 
         return [
-            'name' => $name,
+            'name' => $terms->display(),
             'grams' => $grams,
+            'english' => $terms->english,
+            'native' => $terms->native,
             'candidates' => $candidates,
         ];
+    }
+
+    /**
+     * Build a pending payload for one hand-typed food name (the manual path).
+     *
+     * @return array{name: string, grams: float, english: string, native: string|null, candidates: list<array<string, mixed>>}
+     */
+    public function pendingForName(string $name, float $grams = 100.0, ?NutrientProfile $estimate = null): array
+    {
+        return $this->pendingForTerms(new SearchTerms($name), $grams, $estimate);
     }
 
     /**
      * Build pending payloads for every recognised item in a photo.
      *
      * @param  list<RecognisedItem>  $items
-     * @return list<array{name: string, grams: float, candidates: list<array<string, mixed>>}>
+     * @return list<array{name: string, grams: float, english: string, native: string|null, candidates: list<array<string, mixed>>}>
      */
     public function pendingForRecognised(array $items): array
     {
         $pending = [];
         foreach ($items as $item) {
-            $pending[] = $this->pendingForName($item->name, $item->estimatedGrams, $item->estimatedProfile);
+            $pending[] = $this->pendingForTerms($item->searchTerms(), $item->estimatedGrams, $item->estimatedProfile);
         }
 
         return $pending;
@@ -64,7 +78,7 @@ class MealLogService
      *
      * @param  array<string, mixed>  $candidate  one entry from a pending payload
      */
-    public function commit(array $candidate, string $name, float $grams, MealType $meal, CarbonInterface $loggedAt): MealEntry
+    public function commit(array $candidate, SearchTerms $terms, float $grams, MealType $meal, CarbonInterface $loggedAt): MealEntry
     {
         $source = NutrientSource::from((string) $candidate['source']);
 
@@ -78,14 +92,19 @@ class MealLogService
 
         $foodItemId = is_int($candidate['food_item_id'] ?? null) ? $candidate['food_item_id'] : null;
 
-        // Confirming a real (non-estimated) match that is not already in the
-        // library promotes it there, so lower tiers get used less over time.
-        // Estimates are never promoted — they must never become "verified".
         if ($foodItemId === null && $source !== NutrientSource::Estimated) {
-            $foodItemId = $this->promoteToLibrary($name, $profile, $source);
+            // Confirming a real (non-estimated) match that is not already in the
+            // library promotes it there, storing both names, so lower tiers get
+            // used less over time. Estimates are never promoted.
+            $foodItemId = $this->promoteToLibrary($terms->display(), $terms->alt(), $profile, $source);
+        } elseif ($foodItemId !== null) {
+            // A library item answered: if recognition gave a name it does not yet
+            // carry, fill its empty second column so it is found by either name
+            // next time. Pre-migration single-language items heal themselves.
+            $this->backfillAltName($foodItemId, $terms);
         }
 
-        $entry = MealEntry::fromPortion($profile->forGrams($grams), $name, $meal, $loggedAt, $foodItemId);
+        $entry = MealEntry::fromPortion($profile->forGrams($grams), $terms->display(), $meal, $loggedAt, $foodItemId);
         $entry->save();
 
         return $entry;
@@ -108,7 +127,8 @@ class MealLogService
         MealType $meal,
         CarbonInterface $loggedAt,
     ): MealEntry {
-        $foodItemId = $this->promoteToLibrary($name, $profile, NutrientSource::Manual);
+        // A hand-typed entry carries a single name; there is no second language.
+        $foodItemId = $this->promoteToLibrary($name, null, $profile, NutrientSource::Manual);
 
         $entry = MealEntry::fromPortion($profile->forGrams($grams), $name, $meal, $loggedAt, $foodItemId);
         $entry->save();
@@ -138,7 +158,7 @@ class MealLogService
         ];
     }
 
-    private function promoteToLibrary(string $name, NutrientProfile $profile, NutrientSource $source): int
+    private function promoteToLibrary(string $name, ?string $altName, NutrientProfile $profile, NutrientSource $source): int
     {
         $origin = match ($source) {
             NutrientSource::Usda => ProfileOrigin::Usda,
@@ -148,6 +168,7 @@ class MealLogService
 
         $item = FoodItem::create([
             'name' => $name,
+            'alt_name' => $altName,
             'kind' => FoodItemKind::Direct->value,
             'origin' => $origin->value,
             'kcal_per_100g' => $profile->kcal,
@@ -157,5 +178,31 @@ class MealLogService
         ]);
 
         return $item->id;
+    }
+
+    /**
+     * Fill a matched library item's empty second name with a recognition term it
+     * does not already carry. Only ever writes into an empty column — a name the
+     * user set by hand is never overwritten.
+     */
+    private function backfillAltName(int $foodItemId, SearchTerms $terms): void
+    {
+        $item = FoodItem::find($foodItemId);
+        if ($item === null) {
+            return;
+        }
+
+        if (is_string($item->alt_name) && trim($item->alt_name) !== '') {
+            return;
+        }
+
+        foreach ($terms->all() as $term) {
+            if (strcasecmp($term, trim($item->name)) !== 0) {
+                $item->alt_name = $term;
+                $item->save();
+
+                return;
+            }
+        }
     }
 }

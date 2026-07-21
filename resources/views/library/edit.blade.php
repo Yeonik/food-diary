@@ -12,6 +12,11 @@
             <label>Name</label>
             <input type="text" name="name" value="{{ old('name', $item->name) }}" style="width:100%" required>
         </div>
+        <div style="margin-top:10px">
+            <label>Name in another language <span class="muted">(optional)</span></label>
+            <input type="text" name="alt_name" value="{{ old('alt_name', $item->alt_name) }}" style="width:100%">
+            <p class="muted" style="margin:4px 0 0">A photo can find this item by either name.</p>
+        </div>
         <div class="row" style="margin-top:10px">
             <div><label>kcal / 100 g</label><input type="number" step="0.1" name="kcal_per_100g" value="{{ old('kcal_per_100g', $item->kcal_per_100g) }}" required></div>
             <div><label>Protein g / 100 g</label><input type="number" step="0.1" name="protein_g_per_100g" value="{{ old('protein_g_per_100g', $item->protein_g_per_100g) }}" required></div>

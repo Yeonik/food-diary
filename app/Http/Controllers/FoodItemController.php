@@ -48,6 +48,7 @@ class FoodItemController extends Controller
 
         FoodItem::create([
             'name' => $validated['name'],
+            'alt_name' => $validated['alt_name'] ?? null,
             'kind' => FoodItemKind::Direct->value,
             'origin' => ProfileOrigin::Manual->value,
             'kcal_per_100g' => $validated['kcal_per_100g'],
@@ -168,6 +169,21 @@ class FoodItemController extends Controller
             // only their provenance link moves.
             RecipeIngredient::query()->where('ingredient_id', $item->id)->update(['ingredient_id' => $targetId]);
             MealEntry::query()->where('food_item_id', $item->id)->update(['food_item_id' => $targetId]);
+
+            // Don't lose a second-language name the duplicate carried: if the
+            // survivor has no alt name, adopt one of the duplicate's names that
+            // it does not already have. Never overwrite an existing alt name.
+            $target = FoodItem::find($targetId);
+            if ($target !== null && ($target->alt_name === null || trim($target->alt_name) === '')) {
+                foreach ([$item->alt_name, $item->name] as $candidate) {
+                    if (is_string($candidate) && trim($candidate) !== '' && strcasecmp($candidate, $target->name) !== 0) {
+                        $target->alt_name = trim($candidate);
+                        $target->save();
+                        break;
+                    }
+                }
+            }
+
             $item->delete();
         });
 
@@ -175,13 +191,16 @@ class FoodItemController extends Controller
     }
 
     /**
-     * @return array{name: string, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float}
+     * @return array{name: string, alt_name: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float}
      */
     private function validateDirect(Request $request): array
     {
-        /** @var array{name: string, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float} $validated */
+        /** @var array{name: string, alt_name: string|null, kcal_per_100g: float, protein_g_per_100g: float, fat_g_per_100g: float, carbs_g_per_100g: float} $validated */
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            // The same food's name in another language, optional — lets a photo
+            // resolve it by either name later.
+            'alt_name' => ['nullable', 'string', 'max:255'],
             'kcal_per_100g' => ['required', 'numeric', 'min:0'],
             'protein_g_per_100g' => ['required', 'numeric', 'min:0'],
             'fat_g_per_100g' => ['required', 'numeric', 'min:0'],

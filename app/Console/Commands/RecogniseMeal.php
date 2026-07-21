@@ -9,6 +9,7 @@ use App\Nutrition\Exceptions\InvalidPhotoException;
 use App\Nutrition\Exceptions\RecognitionFailedException;
 use App\Nutrition\FoodResolver;
 use App\Nutrition\PhotoPreparer;
+use App\Nutrition\SearchTerms;
 use Illuminate\Console\Command;
 
 /**
@@ -55,9 +56,10 @@ class RecogniseMeal extends Command
 
         foreach ($items as $item) {
             $this->line('');
-            $this->info(sprintf('%s  (~%d g, confidence %.2f)', $item->name, (int) $item->estimatedGrams, $item->confidence));
+            $label = $item->nativeName !== null ? sprintf('%s / %s', $item->nativeName, $item->name) : $item->name;
+            $this->info(sprintf('%s  (~%d g, confidence %.2f)', $label, (int) $item->estimatedGrams, $item->confidence));
 
-            $resolution = $resolver->resolve($item->name, $item->estimatedProfile);
+            $resolution = $resolver->resolve(new SearchTerms($item->name, $item->nativeName), $item->estimatedProfile);
 
             foreach ($resolution->candidates() as $match) {
                 $this->line(sprintf(

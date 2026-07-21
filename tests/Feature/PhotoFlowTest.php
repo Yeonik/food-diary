@@ -54,7 +54,7 @@ class PhotoFlowTest extends TestCase
         $logged = [];
 
         foreach ($recogniser->recognise($prepared) as $item) {
-            $resolution = $resolver->resolve($item->name, $item->estimatedProfile);
+            $resolution = $resolver->resolve($item->searchTerms(), $item->estimatedProfile);
 
             // Take the top library candidate — exactly what the confirm screen
             // would default to — and snapshot it onto an entry.

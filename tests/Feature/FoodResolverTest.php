@@ -8,6 +8,7 @@ use App\Models\FoodItem;
 use App\Nutrition\FoodResolver;
 use App\Nutrition\NutrientProfile;
 use App\Nutrition\NutrientSource;
+use App\Nutrition\SearchTerms;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -60,7 +61,7 @@ class FoodResolverTest extends TestCase
             ->create(['name' => 'Chicken breast']);
         $this->fakeBothApis();
 
-        $resolution = $this->resolver()->resolve('Chicken breast');
+        $resolution = $this->resolver()->resolve(new SearchTerms('Chicken breast'));
 
         $this->assertSame(1, $resolution->answeringTier());
         $this->assertTrue($resolution->hasLibraryMatch());
@@ -73,7 +74,7 @@ class FoodResolverTest extends TestCase
         // No library item for this name, so the API tier is what answers.
         $this->fakeBothApis();
 
-        $resolution = $this->resolver()->resolve('chicken breast');
+        $resolution = $this->resolver()->resolve(new SearchTerms('chicken breast'));
 
         $this->assertCount(2, $resolution->apiMatches);
 
@@ -86,7 +87,7 @@ class FoodResolverTest extends TestCase
     {
         $this->fakeBothApis();
 
-        $resolution = $this->resolver()->resolve('chicken breast');
+        $resolution = $this->resolver()->resolve(new SearchTerms('chicken breast'));
 
         // Both candidates survive side by side; the resolver picks no winner and
         // offers no estimate to paper over the choice.
@@ -104,7 +105,7 @@ class FoodResolverTest extends TestCase
 
         $fallback = new NutrientProfile(200, 10, 8, 22, NutrientSource::Estimated);
 
-        $resolution = $this->resolver()->resolve('some home-cooked thing', $fallback);
+        $resolution = $this->resolver()->resolve(new SearchTerms('some home-cooked thing'), $fallback);
 
         $this->assertTrue($resolution->isUnresolved());
         $this->assertNotNull($resolution->estimated);
@@ -125,7 +126,7 @@ class FoodResolverTest extends TestCase
             ]),
         ]);
 
-        $resolution = $this->resolver()->resolve('yoghurt');
+        $resolution = $this->resolver()->resolve(new SearchTerms('yoghurt'));
 
         // Open Food Facts still answers; USDA's rate limit is reported, not swallowed.
         $this->assertCount(1, $resolution->apiMatches);
