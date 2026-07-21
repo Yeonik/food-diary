@@ -16,7 +16,13 @@ use Illuminate\Support\Facades\Route;
 // The optional access gate. These two are reachable while locked; everything
 // else is behind the EnsureUnlocked middleware in the web group.
 Route::get('/unlock', [AccessController::class, 'show'])->name('unlock.show');
-Route::post('/unlock', [AccessController::class, 'unlock'])->name('unlock');
+// Stock throttle on the attempts: 5 per minute per IP. The gate is one shared
+// secret with no lockout of its own, so this is the only brake on guessing. It
+// is deliberately minimal — the gate is temporary and will be replaced by real
+// accounts, so nothing bespoke is built on top of it.
+Route::post('/unlock', [AccessController::class, 'unlock'])
+    ->middleware('throttle:5,1')
+    ->name('unlock');
 
 // Diary
 Route::get('/', [DiaryController::class, 'index'])->name('diary.index');
