@@ -86,6 +86,24 @@ Open Food Facts (ODbL). Sites like health-diet.ru or pbprog.ru publish tables
 whose licensing is unclear and whose terms generally forbid it, so they are not
 touched. This is a deliberate choice.
 
+## Front-end: zero tooling
+
+There is no build step. The interface is server-rendered Blade; the stylesheet
+(`public/css/app.css`) and the fonts (`public/fonts/`) are served as static
+files. No Node, npm, Vite or Tailwind — not in the Docker image, not in CI. This
+is a decision, not an omission: a self-hosted single-user tool is simpler to run
+and to verify when the whole front-end is one stylesheet and a handful of inline
+SVG icons.
+
+The typeface is **Manrope** (SIL Open Font License; the licence travels with the
+files in `public/fonts/OFL.txt`). Three weights ship — 400, 600, 800 — in the
+Latin and Cyrillic subsets only; Latin-ext and Vietnamese are dropped to keep
+the payload small on mobile data, where the app is used. Cyrillic is shipped
+because the interface is bilingual (Russian and English). The font is
+self-hosted rather than fetched from a font CDN at runtime, because a
+third-party request from a page that logs what someone eats is a leak the user
+did not ask for.
+
 ## Architecture
 
 PHP 8.3+, Laravel 13, SQLite, Blade with minimal JS, Docker Compose. The domain

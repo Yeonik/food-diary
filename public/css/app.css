@@ -1,0 +1,388 @@
+/* food-diary — hand-written design system, served static. No build step, no
+   Tailwind, no Node: this stylesheet and the fonts beside it are the whole
+   front-end pipeline. See the README ("Front-end: zero tooling").
+
+   The palette is deliberately neutral — one primary colour, no red/green, no
+   warning hues. A number is information, never a verdict (hard rule 4). */
+
+/* --- Typeface --------------------------------------------------------------
+   Manrope, self-hosted, SIL OFL (see public/fonts/OFL.txt). Three weights and
+   two subsets only — Latin + Cyrillic — because the app is used on mobile data
+   and the audience is Russian; Latin-ext and Vietnamese are not shipped. */
+
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('../fonts/manrope-latin-400-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('../fonts/manrope-cyrillic-400-normal.woff2') format('woff2');
+    unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+}
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 600; font-display: swap;
+    src: url('../fonts/manrope-latin-600-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 600; font-display: swap;
+    src: url('../fonts/manrope-cyrillic-600-normal.woff2') format('woff2');
+    unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+}
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 800; font-display: swap;
+    src: url('../fonts/manrope-latin-800-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+    font-family: 'Manrope'; font-style: normal; font-weight: 800; font-display: swap;
+    src: url('../fonts/manrope-cyrillic-800-normal.woff2') format('woff2');
+    unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+}
+
+/* --- Tokens ---------------------------------------------------------------- */
+
+:root {
+    --primary: #1c5d5a;
+    --primary-dark: #164847;
+    --primary-tint: #e7f1ef;
+    --text: #182223;
+    --text-muted: #5b6768;
+    --muted: #9aa6a7;
+    --border: #d5dbdb;
+    --surface: #eef1f1;
+    --surface-2: #f5f6f7;
+    --card: #ffffff;
+
+    /* Provenance: an estimate is visually lighter and never reads as verified. */
+    --estimate: #8a6d3b;
+
+    --r-sm: 12px;
+    --r-md: 14px;
+    --r-lg: 18px;
+    --r-xl: 20px;
+
+    --tap: 44px;               /* minimum touch target */
+    --content-max: 720px;
+    --sidebar-w: 232px;
+    --tabbar-h: 62px;
+
+    --font: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- Reset & base ---------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--surface);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;              /* no horizontal scroll, ever */
+}
+
+h1, h2, h3 { margin: 0; font-weight: 800; line-height: 1.2; }
+h1 { font-size: 22px; }
+h2 { font-size: 17px; }
+h3 { font-size: 15px; }
+
+p { margin: 0 0 10px; }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.muted { color: var(--text-muted); }
+.caption { font-size: 12px; color: var(--muted); }
+
+/* Numbers are the visual anchor: tabular, heavy, larger than body copy. */
+.numeral { font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.numeral-lg { font-size: 34px; }
+.numeral-md { font-size: 22px; }
+
+.visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 0 0 var(--r-sm) 0;
+}
+.skip-link:focus { left: 0; }
+
+/* --- App shell ------------------------------------------------------------
+   Mobile-first: a scrolling content column with a fixed bottom tab bar and a
+   floating action button. At >= 768px the tab bar becomes a left sidebar. */
+
+.app {
+    display: block;
+    min-height: 100vh;
+}
+
+.app__content {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 16px 16px calc(var(--tabbar-h) + 84px);   /* room for tab bar + FAB */
+}
+
+/* Bottom tab bar (mobile) */
+.tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    height: var(--tabbar-h);
+    display: flex;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tabbar__item {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px;
+    min-height: var(--tap);
+    color: var(--muted);
+    font-size: 11px; font-weight: 600;
+    text-decoration: none;
+}
+.tabbar__item:hover { text-decoration: none; }
+.tabbar__item svg { width: 22px; height: 22px; }
+.tabbar__item[aria-current='page'] { color: var(--primary); }
+
+/* Floating action button + its two-option menu (pure HTML <details>) */
+.fab {
+    position: fixed; right: 18px; bottom: calc(var(--tabbar-h) + 18px + env(safe-area-inset-bottom, 0));
+    z-index: 30;
+}
+.fab__toggle {
+    list-style: none; cursor: pointer;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(22, 72, 71, 0.32);
+}
+.fab__toggle::-webkit-details-marker { display: none; }
+.fab__toggle svg { width: 26px; height: 26px; transition: transform 0.15s ease; }
+.fab[open] .fab__toggle svg { transform: rotate(45deg); }
+.fab__menu {
+    position: absolute; right: 0; bottom: 68px;
+    display: flex; flex-direction: column; gap: 8px;
+    min-width: 200px;
+}
+.fab__action {
+    display: flex; align-items: center; gap: 10px;
+    min-height: var(--tap);
+    padding: 12px 16px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--r-md);
+    box-shadow: 0 4px 14px rgba(24, 34, 35, 0.12);
+    font-weight: 600; text-decoration: none;
+}
+.fab__action:hover { text-decoration: none; background: var(--surface-2); }
+.fab__action svg { width: 20px; height: 20px; color: var(--primary); }
+
+/* Sidebar (desktop) — hidden on mobile */
+.sidebar { display: none; }
+
+@media (min-width: 768px) {
+    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; }
+    .tabbar { display: none; }
+    .fab { display: none; }
+    .sidebar {
+        display: flex; flex-direction: column; gap: 4px;
+        position: sticky; top: 0; align-self: start;
+        height: 100vh;
+        padding: 20px 14px;
+        background: var(--card);
+        border-right: 1px solid var(--border);
+    }
+    .sidebar__brand { font-weight: 800; font-size: 18px; padding: 6px 12px 16px; }
+    .sidebar__item {
+        display: flex; align-items: center; gap: 12px;
+        min-height: var(--tap);
+        padding: 8px 12px; border-radius: var(--r-md);
+        color: var(--text-muted); font-weight: 600; text-decoration: none;
+    }
+    .sidebar__item:hover { text-decoration: none; background: var(--surface-2); }
+    .sidebar__item svg { width: 20px; height: 20px; }
+    .sidebar__item[aria-current='page'] { color: var(--primary); background: var(--primary-tint); }
+    .sidebar__actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .sidebar__action {
+        display: flex; align-items: center; gap: 10px;
+        min-height: var(--tap); padding: 10px 12px;
+        border-radius: var(--r-md); font-weight: 600; text-decoration: none;
+    }
+    .sidebar__action--primary { background: var(--primary); color: #fff; }
+    .sidebar__action--ghost { border: 1px solid var(--border); color: var(--text); }
+    .sidebar__action:hover { text-decoration: none; }
+    .app__content { padding: 24px 28px 48px; }
+}
+
+/* --- Cards & lists --------------------------------------------------------- */
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+.card--dim { opacity: 0.55; }               /* the goal card, when the goal is off */
+
+.stack > * + * { margin-top: 10px; }
+
+.section-title {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 22px 0 10px;
+}
+.section-title h2 { font-size: 16px; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list__row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.list__row:last-child { border-bottom: 0; }
+.list__body { flex: 1; min-width: 0; }
+.list__title { font-weight: 600; }
+.list__thumb {
+    width: 44px; height: 44px; flex: none;
+    border-radius: var(--r-sm); object-fit: cover;
+    background: var(--surface-2); border: 1px solid var(--border);
+}
+
+/* --- Provenance markers (hard rule 2) ------------------------------------- */
+
+.prov { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.prov--verified { color: var(--primary); }
+.prov--estimate { color: var(--estimate); font-weight: 400; }
+.prov__glyph { font-size: 13px; }
+
+/* An estimated row is lighter and carries a dashed edge — never reads verified. */
+.is-estimate { border-left: 3px dashed var(--estimate); padding-left: 11px; }
+
+/* --- Chips (history filters) ---------------------------------------------- */
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+    min-height: 36px; padding: 6px 14px;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--card); color: var(--text-muted);
+    font-weight: 600; font-size: 13px; text-decoration: none;
+    display: inline-flex; align-items: center;
+}
+.chip:hover { text-decoration: none; }
+.chip[aria-pressed='true'], .chip--active { background: var(--primary-tint); color: var(--primary); border-color: var(--primary-tint); }
+
+/* --- Tiles (history summary) ---------------------------------------------- */
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px; }
+.tile__label { font-size: 12px; color: var(--muted); }
+.tile__value { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; }
+@media (max-width: 400px) { .tiles { grid-template-columns: 1fr; } }
+
+/* --- Forms ----------------------------------------------------------------- */
+
+label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+
+input, select, textarea {
+    font: inherit; width: 100%;
+    min-height: var(--tap);
+    padding: 10px 12px;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--r-md);
+}
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary);
+}
+.field { margin-bottom: 12px; }
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-row > .field { flex: 1; min-width: 140px; }
+
+/* Numeric stepper (– value +) */
+.stepper { display: inline-flex; align-items: stretch; gap: 0; }
+.stepper__btn {
+    width: var(--tap); min-height: var(--tap);
+    border: 1px solid var(--border); background: var(--card); color: var(--primary);
+    font-size: 20px; font-weight: 800; cursor: pointer;
+}
+.stepper__btn:first-child { border-radius: var(--r-md) 0 0 var(--r-md); }
+.stepper__btn:last-child { border-radius: 0 var(--r-md) var(--r-md) 0; }
+.stepper input { text-align: center; border-radius: 0; border-left: 0; border-right: 0; width: 90px; }
+
+/* --- Buttons --------------------------------------------------------------- */
+
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: var(--tap); padding: 10px 18px;
+    border: 0; border-radius: var(--r-md);
+    background: var(--primary); color: #fff;
+    font: inherit; font-weight: 700; cursor: pointer; text-decoration: none;
+}
+.btn:hover { background: var(--primary-dark); text-decoration: none; }
+.btn:active { background: var(--primary-dark); }
+.btn--block { width: 100%; }
+.btn--ghost { background: transparent; color: var(--primary); border: 1px solid var(--border); }
+.btn--ghost:hover { background: var(--surface-2); }
+.btn--quiet { background: transparent; color: var(--primary); min-height: 36px; padding: 6px 10px; font-weight: 600; }
+.btn--danger-quiet { background: transparent; color: var(--text-muted); min-height: 36px; padding: 6px 10px; font-weight: 600; }
+
+.badge {
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px;
+}
+.badge--library { color: var(--primary); border-color: var(--primary-tint); background: var(--primary-tint); }
+
+/* --- Flash & errors -------------------------------------------------------- */
+
+.notice { background: var(--primary-tint); color: var(--primary-dark); border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 14px; font-weight: 600; }
+.errors { background: #f6f0e8; border: 1px solid #e4d6c0; color: #6b5836; border-radius: var(--r-md); padding: 10px 14px 10px 16px; margin: 0 0 14px; }
+.errors ul { margin: 0; padding-left: 18px; }
+.field-error { color: var(--estimate); font-size: 12px; margin-top: 4px; }
+
+/* --- Date stepper (day screen) -------------------------------------------- */
+
+.datestep { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.datestep a, .datestep span { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; font-weight: 700; }
+.datestep__label { font-size: 16px; }
+
+/* --- Progress ring (day summary, variant A) -------------------------------
+   Never changes colour by state (hard rule 4): primary fill on its tint track,
+   whatever the number. When there is no goal there is no proportion to draw and
+   the ring is replaced by the plain eaten figure (rendered without .ring). */
+
+.ring { display: block; }
+.ring__track { fill: none; stroke: var(--primary-tint); }
+.ring__value { fill: none; stroke: var(--primary); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+.ring__center { text-align: center; }
+
+.summary { display: flex; align-items: center; gap: 20px; }
+.summary__figure { text-align: center; }
+
+/* --- Charts (hand-rolled SVG) --------------------------------------------- */
+
+.chart { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; }
+.chart__bar { fill: var(--primary); }
+.chart__bar--empty { fill: var(--border); }        /* a day with no entries: zero, drawn, not skipped */
+.chart__goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
+.chart__line { fill: none; stroke: var(--primary); stroke-width: 2; }
+.chart__dot { fill: var(--primary); }
+.chart__axis { fill: var(--muted); font-size: 10px; }
+.chart__grid { stroke: var(--border); stroke-width: 1; }
+
+.macro { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.macro__seg--p { background: var(--primary); }
+.macro__seg--f { background: var(--muted); }
+.macro__seg--c { background: var(--primary-tint); }
+.macro__legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+.macro__key { display: inline-flex; align-items: center; gap: 5px; }
+.macro__swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }

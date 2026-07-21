@@ -6,6 +6,7 @@ use App\Http\Controllers\AccessController;
 use App\Http\Controllers\DiaryController;
 use App\Http\Controllers\FoodItemController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ManualEntryController;
 use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\MealPhotoController;
@@ -26,6 +27,9 @@ Route::post('/unlock', [AccessController::class, 'unlock'])
 
 // Diary
 Route::get('/', [DiaryController::class, 'index'])->name('diary.index');
+
+// History — charts over a chosen range.
+Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
 
 // Logging a meal — photo path, manual path, shared confirm.
 Route::get('/log/photo', [MealPhotoController::class, 'create'])->name('log.photo');

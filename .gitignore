@@ -1,7 +1,4 @@
 # --- Laravel ---
-/node_modules
-/public/build
-/public/hot
 /public/storage
 /storage/*.key
 /storage/pail
@@ -39,3 +36,5 @@ yarn-error.log
 # The public README is the single intended exception.
 /*.md
 !/README.md
+# Design working documents (spec + clickable prototype), same reasoning.
+/design/
