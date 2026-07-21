@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gates:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, exif, pdo_sqlite, sqlite3, zip, bcmath, mbstring, fileinfo
+          # Enough headroom for PHPStan so the documented command needs no flags.
+          ini-values: memory_limit=512M
+          coverage: none
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      # These gates make no network call and need no API key: the recogniser is
+      # faked and every outbound HTTP is intercepted in the tests.
+      - name: Security audit
+        run: composer audit
+
+      - name: Formatting (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Static analysis (PHPStan)
+        run: vendor/bin/phpstan analyse
+
+      - name: Tests
+        run: php artisan test

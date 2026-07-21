@@ -1,0 +1,27 @@
+# `docker compose up` builds the image, migrates a SQLite database on a
+# persisted volume, and serves the diary at http://localhost:8000.
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /app/storage/app/food-diary.sqlite
+      # Keep sessions and cache off the (ephemeral) filesystem framework dirs.
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      # Recognition and lookups. Leave the recogniser as 'fake' to try the app
+      # with no keys; set real keys and switch to 'gemini' for live recognition.
+      FOOD_RECOGNISER: ${FOOD_RECOGNISER:-fake}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      USDA_API_KEY: ${USDA_API_KEY:-}
+      APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}
+    volumes:
+      # Persist the database and uploaded photos across restarts.
+      - storage:/app/storage
+
+volumes:
+  storage:

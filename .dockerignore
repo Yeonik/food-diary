@@ -1,0 +1,15 @@
+.git
+.github
+vendor
+node_modules
+storage/app/private/photos
+*.sqlite
+*.sqlite-journal
+.env
+.env.backup
+.env.production
+
+# Internal working documents: ignore root markdown as a class rather than
+# naming the private files (same reasoning as .gitignore). Keep the README.
+/*.md
+!/README.md
