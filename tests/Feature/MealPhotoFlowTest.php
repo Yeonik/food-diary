@@ -7,7 +7,9 @@ namespace Tests\Feature;
 use App\Http\Controllers\PendingLogController;
 use App\Models\FoodItem;
 use App\Models\MealEntry;
+use App\Nutrition\Contracts\FoodRecogniser;
 use App\Nutrition\NutrientSource;
+use App\Nutrition\Recognisers\GeminiRecogniser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -93,5 +95,40 @@ class MealPhotoFlowTest extends TestCase
 
         // The photo is deleted once the entry is confirmed.
         $this->assertCount(0, glob(storage_path('app/private/photos').'/*') ?: []);
+    }
+
+    public function test_upload_fails_loudly_when_the_recogniser_is_not_configured(): void
+    {
+        // A real recogniser with no key: it must raise, never substitute a fake.
+        $this->app->instance(FoodRecogniser::class, new GeminiRecogniser(
+            'https://generativelanguage.googleapis.com/v1beta',
+            'gemini-2.0-flash',
+            null,
+        ));
+
+        $response = $this->post(route('log.photo.store'), ['photo' => UploadedFile::fake()->image('olives.jpg', 300, 300)]);
+
+        $response->assertSessionHasErrors('photo');
+        // No invented result: no entry, and no pending confirmation to proceed with.
+        $this->assertSame(0, MealEntry::count());
+        $this->assertNull(session(PendingLogController::SESSION_KEY));
+    }
+
+    public function test_upload_fails_loudly_when_gemini_rejects_the_key(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(['error' => ['message' => 'API key not valid']], 401),
+        ]);
+        $this->app->instance(FoodRecogniser::class, new GeminiRecogniser(
+            'https://generativelanguage.googleapis.com/v1beta',
+            'gemini-2.0-flash',
+            'invalid-key',
+        ));
+
+        $response = $this->post(route('log.photo.store'), ['photo' => UploadedFile::fake()->image('olives.jpg', 300, 300)]);
+
+        $response->assertSessionHasErrors('photo');
+        $this->assertSame(0, MealEntry::count());
+        $this->assertNull(session(PendingLogController::SESSION_KEY));
     }
 }

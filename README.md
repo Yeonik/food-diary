@@ -112,18 +112,20 @@ app/Models/  FoodItem, RecipeIngredient, MealEntry, WeightEntry, Goal
 docker compose up --build
 ```
 
-The diary is then at <http://localhost:8000>. With the defaults it runs against
-the **fake** recogniser, so you can click through the whole flow with no keys.
+The diary is then at <http://localhost:8000> (change the host port with
+`APP_PORT`). Photo recognition needs a Gemini key; **without one it fails loudly
+and never invents a result** — there is no "fake" mode in the running app (the
+fake recogniser exists only in the test suite). Manual entry, the library,
+weight and goals all work with no keys.
 
-To use real recognition, set these (in a `.env`, or as compose environment):
+Configure recognition and lookups in a `.env`:
 
-- `FOOD_RECOGNISER=gemini`
-- `GEMINI_API_KEY=...` — from Google AI Studio.
+- `GEMINI_API_KEY=...` — from Google AI Studio. Required for photo recognition.
 - `USDA_API_KEY=...` — free from <https://api.data.gov>. Sent as a header, never
-  in a URL.
+  in a URL. Without it, USDA matches are skipped with a notice.
 - Open Food Facts needs **no key**.
-- `APP_ACCESS_PASSWORD=...` — optional; set it to lock the instance behind one
-  password. Left blank, the diary is open (a machine only you can reach).
+- `APP_ACCESS_PASSWORD=...` — optional; a plaintext value or a bcrypt hash. Set
+  it to lock the instance; left blank, the diary is open.
 
 See `.env.example` for the full list.
 

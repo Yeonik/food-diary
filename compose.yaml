@@ -13,9 +13,9 @@ services:
       # Keep sessions and cache off the (ephemeral) filesystem framework dirs.
       SESSION_DRIVER: database
       CACHE_STORE: database
-      # Recognition and lookups. Leave the recogniser as 'fake' to try the app
-      # with no keys; set real keys and switch to 'gemini' for live recognition.
-      FOOD_RECOGNISER: ${FOOD_RECOGNISER:-fake}
+      # Recognition and lookups. A Gemini key is required for recognition; with
+      # no key the app runs but photo recognition fails loudly (it never invents
+      # a result). Manual entry, the library, weight and goals work without it.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
       APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}

@@ -25,8 +25,12 @@ class NutritionServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(FoodRecogniser::class, function (Application $app): FoodRecogniser {
-            // Tests never reach the network; the fake stands in unconditionally.
-            if ($app->environment('testing') || config('nutrition.recogniser') === 'fake') {
+            // The fake is a TEST DOUBLE, never a runtime mode. An app that
+            // silently serves invented food is the worst failure this project
+            // can have — worse than an invented number, it is an invented meal.
+            // So outside the test suite the real recogniser is ALWAYS used, and
+            // a missing or invalid key fails loudly rather than falling back.
+            if ($app->environment('testing')) {
                 return new FakeRecogniser;
             }
 

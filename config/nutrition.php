@@ -5,17 +5,15 @@ declare(strict_types=1);
 return [
 
     /*
-    | Which recogniser to use: 'gemini' (the real vision model) or 'fake'
-    | (canned results, no network). Tests force 'fake' regardless of this value.
-    */
-    /*
     | A single optional access password for this self-hosted instance. Leave it
     | unset and the diary is open (the default for a machine only you can reach);
     | set it and every page requires unlocking once per session.
     */
     'access_password' => env('APP_ACCESS_PASSWORD'),
 
-    'recogniser' => env('FOOD_RECOGNISER', 'gemini'),
+    // There is deliberately no "fake recogniser" runtime switch. The fake is a
+    // test double, bound only in the test environment; the running app always
+    // uses the real recogniser and fails loudly without a key.
 
     'gemini' => [
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),

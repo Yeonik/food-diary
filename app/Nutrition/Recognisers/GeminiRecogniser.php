@@ -11,6 +11,7 @@ use App\Nutrition\NutrientSource;
 use App\Nutrition\PreparedPhoto;
 use App\Nutrition\RecognisedItem;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -52,6 +53,13 @@ class GeminiRecogniser implements FoodRecogniser
             throw new RecognitionFailedException('The recogniser is not configured.');
         }
 
+        // Observability without leaking the key: the key travels only in the
+        // header below and is never logged.
+        Log::info('Gemini recognition request', [
+            'model' => $this->model,
+            'image_bytes' => strlen($photo->contents()),
+        ]);
+
         try {
             $response = Http::withHeaders(['x-goog-api-key' => $this->apiKey])
                 ->timeout(30)
@@ -73,14 +81,32 @@ class GeminiRecogniser implements FoodRecogniser
         }
 
         if ($response->status() === 429) {
+            Log::warning('Gemini recognition rate limited', ['status' => 429]);
+
             throw new RecognitionFailedException('The recogniser is rate limited; please try again shortly.');
         }
 
         if (! $response->successful()) {
+            // The error body carries Google's diagnostic (and never the key,
+            // which is in the header) — log it so a rejected key is visible.
+            Log::warning('Gemini recognition error', [
+                'status' => $response->status(),
+                'body' => mb_substr($response->body(), 0, 500),
+            ]);
+
             throw new RecognitionFailedException('The recogniser returned an error.');
         }
 
-        return $this->parse($response->json('candidates.0.content.parts.0.text'));
+        $text = $response->json('candidates.0.content.parts.0.text');
+
+        // The raw model answer — dishes and portions — for this photo. This is
+        // the actual recogniser output, distinct from anything the app derives.
+        Log::info('Gemini recognition response', [
+            'model' => $this->model,
+            'text' => is_string($text) ? $text : null,
+        ]);
+
+        return $this->parse($text);
     }
 
     /**
