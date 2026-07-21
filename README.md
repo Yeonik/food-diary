@@ -129,6 +129,71 @@ Configure recognition and lookups in a `.env`:
 
 See `.env.example` for the full list.
 
+## Deploying (Railway)
+
+The same `Dockerfile` that runs it locally runs it on [Railway](https://railway.com):
+connect the repository, add a volume, set the variables, deploy. It is a
+single-user tool served by `php artisan serve` — adequate for one person, not a
+high-traffic host.
+
+**Persistent volume (required).** Everything that is written — the SQLite
+database, uploaded photos, sessions and cache (both in SQLite), logs — lives
+under `/app/storage`. Attach one volume:
+
+- Settings → Volumes → **Add Volume**, mount path **`/app/storage`**.
+
+Without it the database is wiped on every redeploy. The first deploy starts with
+an empty volume; the entrypoint recreates the framework directories on each
+start, so an empty volume is fine.
+
+**Port.** Railway assigns the port through `$PORT`; the entrypoint already binds
+to it. Do **not** set `PORT` yourself.
+
+**Migrations run automatically** on each deploy (`php artisan migrate --force`
+in the entrypoint). This is deliberate: a single instance on a volume has no
+migration race, the project's migrations are additive and nullable, and a failed
+migration fails the deploy cleanly (the container exits, Railway keeps the
+previous version) rather than serving a half-migrated schema. Escape hatch for a
+risky migration: open a Railway shell, copy
+`/app/storage/app/food-diary.sqlite` aside first; if you want to gate the
+migration by hand, run it there with `php artisan migrate` before the code that
+needs it.
+
+**Variables to set** in the service (Settings → Variables):
+
+| Variable | Value |
+| --- | --- |
+| `APP_KEY` | generate once locally: `php artisan key:generate --show` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | `https://<your-app>.up.railway.app` |
+| `APP_ACCESS_PASSWORD` | a **bcrypt hash** (see the `$` note below) |
+| `SESSION_SECURE_COOKIE` | `true` |
+| `DB_CONNECTION` | `sqlite` |
+| `DB_DATABASE` | `/app/storage/app/food-diary.sqlite` (must match the volume) |
+| `SESSION_DRIVER` | `database` |
+| `CACHE_STORE` | `database` |
+| `QUEUE_CONNECTION` | `database` |
+| `GEMINI_API_KEY` | your Gemini key (photo recognition) |
+| `GEMINI_MODEL` | optional, e.g. `gemini-3.5-flash`; a default applies if unset |
+| `USDA_API_KEY` | optional; without it USDA matches are skipped |
+| `OFF_USER_AGENT` | optional, e.g. `food-diary/1.0 (self-hosted)` |
+
+`APP_KEY` must be a fixed value you set once — not regenerated per deploy, or
+every session breaks on each release.
+
+**The `$` in a bcrypt hash — read this.** A bcrypt hash looks like
+`$2y$12$....`. Railway interpolates only its own `${{ ... }}` reference syntax,
+so a lone `$` is stored literally and the hash is safe to paste **as-is**.
+Do **not** reuse a hash you doubled for `docker-compose`: in a compose `.env`
+each `$` is escaped to `$$`, and Railway would store those doubled dollars
+verbatim, so `password_verify` fails **silently** — the password just stops
+matching with nothing in the logs. On Railway use the raw single-`$` hash
+straight from `php -r 'echo password_hash("your-password", PASSWORD_BCRYPT), PHP_EOL;'`.
+
+**Health check.** The app exposes `/up` (returns 200, outside the password
+gate). Point Railway's health check path at `/up` if you enable one.
+
 ## Development
 
 ```bash
