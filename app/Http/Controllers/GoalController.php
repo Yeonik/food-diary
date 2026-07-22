@@ -32,9 +32,23 @@ class GoalController extends Controller
         ]);
 
         $goal = Goal::query()->latest('id')->first() ?? new Goal;
-        $goal->fill($validated);
+
+        // The goal switch: off means no targets at all, not a target of zero.
+        $enabled = $request->boolean('goal_enabled');
+        $goal->daily_kcal = $enabled ? ($validated['daily_kcal'] ?? null) : null;
+        $goal->protein_g = $enabled ? ($validated['protein_g'] ?? null) : null;
+        $goal->fat_g = $enabled ? ($validated['fat_g'] ?? null) : null;
+        $goal->carbs_g = $enabled ? ($validated['carbs_g'] ?? null) : null;
+
+        // Meal visibility is display-only; an unchecked box hides that meal on
+        // the Day screen and never touches the entries logged in it.
+        $goal->show_breakfast = $request->boolean('show_breakfast');
+        $goal->show_lunch = $request->boolean('show_lunch');
+        $goal->show_dinner = $request->boolean('show_dinner');
+        $goal->show_snack = $request->boolean('show_snack');
+
         $goal->save();
 
-        return redirect()->route('goal.edit')->with('status', 'Goal saved.');
+        return redirect()->route('goal.edit')->with('status', __('settings.saved'));
     }
 }
