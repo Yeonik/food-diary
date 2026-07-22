@@ -1,49 +1,66 @@
 @extends('layouts.app')
 
-@section('title', 'Library')
+@section('title', __('library.title'))
 
 @section('content')
-    <h1>Personal library</h1>
-    <p class="muted">
-        Foods you confirmed, corrected, or defined as recipes — consulted first when
-        resolving a meal. <a href="{{ route('library.create') }}">Add an item</a> ·
-        <a href="{{ route('library.recipe.create') }}">Define a recipe</a>
-    </p>
+    <h1>{{ __('library.title') }}</h1>
+    <p class="muted">{{ __('library.subtitle') }}</p>
 
-    <form method="get" action="{{ route('library.index') }}" class="panel row">
-        <div style="flex:1">
-            <label for="q">Search</label>
-            <input type="text" name="q" id="q" value="{{ $search }}" style="width:100%">
+    <form method="get" action="{{ route('library.index') }}" class="card">
+        <div class="field">
+            <label for="q">{{ __('library.search') }}</label>
+            <input type="search" name="q" id="q" value="{{ $search }}">
         </div>
-        <div><button type="submit">Search</button></div>
+        <div class="field-row">
+            <button class="btn" type="submit">{{ __('library.search_action') }}</button>
+            <a class="btn btn--ghost" href="{{ route('library.create') }}">
+                <x-icon name="plus" /> {{ __('library.new_product') }}
+            </a>
+            <a class="btn btn--ghost" href="{{ route('library.recipe.create') }}">{{ __('library.define_recipe') }}</a>
+        </div>
     </form>
 
-    <table>
-        <thead><tr><th>Name</th><th>Kind</th><th>Origin</th><th></th></tr></thead>
-        <tbody>
-            @forelse ($items as $item)
-                <tr>
-                    <td>{{ $item->name }}</td>
-                    <td>{{ $item->isRecipe() ? 'Recipe' : 'Direct' }}</td>
-                    <td class="muted">{{ $item->origin?->label() ?? ($item->isRecipe() ? 'Computed' : '—') }}</td>
-                    <td>
-                        @if ($item->isRecipe())
-                            <a class="btn link" href="{{ route('library.recipe.edit', $item) }}">Edit</a>
-                        @else
-                            <a class="btn link" href="{{ route('library.edit', $item) }}">Edit</a>
-                        @endif
-                        <form class="inline-form" method="post" action="{{ route('library.destroy', $item) }}"
-                              onsubmit="return confirm('Remove this item?')">
-                            @csrf @method('DELETE')
-                            <button class="link" type="submit">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="4" class="muted">The library is empty.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
+    @if ($items->isEmpty())
+        <div class="empty">
+            <x-icon name="library" class="empty__icon" />
+            <div class="empty__title">{{ __('library.empty_title') }}</div>
+            <p class="empty__body">{{ __('library.empty_body') }}</p>
+            <div class="empty__actions">
+                <a class="btn" href="{{ route('library.create') }}"><x-icon name="plus" /> {{ __('library.new_product') }}</a>
+            </div>
+        </div>
+    @else
+        <div class="section-title"><h2>{{ __('library.all_products') }}</h2></div>
+        <ul class="list">
+            @foreach ($items as $item)
+                <li class="list__row">
+                    <div class="list__body">
+                        <div class="list__title">{{ $item->name }}</div>
+                        <div class="caption">
+                            @if ($item->kcal_per_100g !== null)
+                                {{ \App\Support\Format::kcal($item->kcal_per_100g) }} {{ __('nutrition.kcal') }} / {{ __('nutrition.per_100g') }}
+                            @elseif ($item->isRecipe())
+                                {{ __('library.recipe') }}
+                            @endif
+                            @if ($item->origin)
+                                · {{ __('source.'.$item->origin->value) }}
+                            @endif
+                        </div>
+                    </div>
+                    @if ($item->isRecipe())
+                        <a class="btn btn--quiet" href="{{ route('library.recipe.edit', $item) }}">{{ __('common.edit') }}</a>
+                    @else
+                        <a class="btn btn--quiet" href="{{ route('library.edit', $item) }}">{{ __('common.edit') }}</a>
+                    @endif
+                    <form method="post" action="{{ route('library.destroy', $item) }}"
+                          onsubmit="return confirm('{{ __('library.confirm_delete') }}')">
+                        @csrf @method('DELETE')
+                        <button class="btn btn--danger-quiet" type="submit">{{ __('common.delete') }}</button>
+                    </form>
+                </li>
+            @endforeach
+        </ul>
 
-    <div style="margin-top:14px">{{ $items->links() }}</div>
+        <div class="pagination">{{ $items->links() }}</div>
+    @endif
 @endsection
