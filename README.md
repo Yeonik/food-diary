@@ -49,6 +49,24 @@ shown next to the entry:
 Confirming a real match writes it to the personal library, so the lower tiers
 get used less over time. The system learns your diet with a table, not a model.
 
+## Barcodes
+
+A packaged product can be logged by its barcode instead of its name: scan it, or
+type the number under it, and it resolves to a single **Open Food Facts** product
+you confirm a weight for. It is a verified source — never an estimate.
+
+Scanning uses the browser's native
+[`BarcodeDetector`](https://developer.mozilla.org/en-US/docs/Web/API/BarcodeDetector)
+on a still frame from the same system camera the photo path uses — no
+`getUserMedia`, no in-page viewfinder, and **no scanner library** (ZXing, Quagga)
+pulled in. That API is not everywhere: **Firefox, Safari and iOS do not support
+it.** There, the app says so plainly and the manual number field — which is
+always present — is the whole feature. A single still can also be blurred or
+angled, so the path to "just type the number" is never hidden.
+
+Because it is a real browser API, `BarcodeDetector` is **not exercised in CI**;
+verify it by hand as with the other integrations (see below).
+
 ## Recipes
 
 Borscht, plov and manty are in no database — every household cooks them
@@ -232,3 +250,9 @@ The real integrations are exercised by a documented manual step:
 ```bash
 php artisan nutrition:recognise path/to/meal.jpg
 ```
+
+**Barcode scanning** is a browser API and cannot run in CI, so verify it by hand:
+open `/log/barcode` in a supporting browser (Chrome or Edge on Android or
+desktop), photograph a real barcode, and confirm the code is read and resolves.
+In Firefox, Safari or on iOS, confirm the app states that scanning is
+unavailable and that typing the number still works.

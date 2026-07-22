@@ -95,3 +95,70 @@ document.addEventListener('click', function (event) {
         event.target.close();
     }
 });
+
+// Barcode scanning: native BarcodeDetector on a still frame from the same
+// capture input the photo path uses — no getUserMedia, no viewfinder, no
+// scanner library. Where the API is missing (Firefox, Safari, iOS) the manual
+// code field is the whole feature, and we say why rather than degrade silently.
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('[data-barcode-form]');
+    if (!form) {
+        return;
+    }
+
+    const scanField = form.querySelector('[data-barcode-scan]');
+    const unsupported = form.querySelector('[data-barcode-unsupported]');
+    const frame = form.querySelector('[data-barcode-frame]');
+    const code = form.querySelector('[data-barcode-code]');
+    const unread = form.querySelector('[data-barcode-unread]');
+
+    if (!('BarcodeDetector' in window)) {
+        // No scanning here — tell the user plainly; the code field stays.
+        if (unsupported) {
+            unsupported.hidden = false;
+        }
+        return;
+    }
+
+    if (scanField) {
+        scanField.hidden = false;
+    }
+
+    if (!frame) {
+        return;
+    }
+
+    frame.addEventListener('change', async function () {
+        const file = frame.files && frame.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (unread) {
+            unread.hidden = true;
+        }
+
+        let value = null;
+        try {
+            const bitmap = await createImageBitmap(file);
+            const codes = await new window.BarcodeDetector().detect(bitmap);
+            value = codes.length ? codes[0].rawValue : null;
+        } catch (error) {
+            value = null;
+        }
+
+        if (value) {
+            code.value = value;
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        } else if (unread) {
+            // A single still frame can be blurred or angled: point back to the
+            // manual field rather than fail in silence.
+            unread.hidden = false;
+            code.focus();
+        }
+    });
+});

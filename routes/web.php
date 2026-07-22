@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccessController;
+use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\DiaryController;
 use App\Http\Controllers\FoodItemController;
 use App\Http\Controllers\GoalController;
@@ -42,6 +43,13 @@ Route::get('/log/manual', [ManualEntryController::class, 'create'])->name('log.m
 Route::post('/log/manual', [ManualEntryController::class, 'store'])->name('log.manual.store');
 Route::get('/log/confirm', [PendingLogController::class, 'show'])->name('log.confirm');
 Route::post('/log/confirm', [PendingLogController::class, 'store'])->name('log.confirm.store');
+
+// Barcode path — scan or type a code, resolve one Open Food Facts product,
+// confirm a weight, log. Two steps, the product held in the session between.
+Route::get('/log/barcode', [BarcodeController::class, 'create'])->name('log.barcode');
+Route::post('/log/barcode', [BarcodeController::class, 'lookup'])->name('log.barcode.lookup');
+Route::get('/log/barcode/confirm', [BarcodeController::class, 'confirm'])->name('log.barcode.confirm');
+Route::post('/log/barcode/confirm', [BarcodeController::class, 'store'])->name('log.barcode.confirm.store');
 
 // Entries
 Route::get('/entries/{entry}/edit', [MealEntryController::class, 'edit'])->name('entries.edit');

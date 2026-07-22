@@ -42,6 +42,9 @@
                 <a class="btn btn--ghost btn--sm" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
                     <x-icon name="plus" /> {{ __('nav.add_manual') }}
                 </a>
+                <a class="btn btn--ghost btn--sm" href="{{ route('log.barcode') }}">
+                    <x-icon name="barcode" /> {{ __('nav.add_barcode') }}
+                </a>
                 <a class="btn btn--sm" href="{{ route('log.photo') }}">
                     <x-icon name="camera" /> {{ __('nav.add_photo') }}
                 </a>
@@ -83,6 +86,9 @@
         <div class="fab__menu">
             <a class="fab__action" href="{{ route('log.photo') }}">
                 <x-icon name="camera" /> <span>{{ __('nav.add_photo') }}</span>
+            </a>
+            <a class="fab__action" href="{{ route('log.barcode') }}">
+                <x-icon name="barcode" /> <span>{{ __('nav.add_barcode') }}</span>
             </a>
             <a class="fab__action" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
                 <x-icon name="manual" /> <span>{{ __('nav.add_manual') }}</span>
