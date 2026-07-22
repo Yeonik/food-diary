@@ -1,25 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Log a photo')
+@section('title', __('photo.title'))
 
 @section('content')
-    <h1>Log a photo</h1>
-    <p class="muted">
-        The photo is sent to Google's Gemini API for recognition. Its EXIF metadata
-        (including GPS) is stripped before it leaves this machine, and the file is
-        deleted once you confirm the entry.
-    </p>
-    <p class="muted">
-        Recognition usually takes a few seconds. When the model is busy it retries,
-        so it can take up to two minutes — the page will wait, that is not an error.
-    </p>
+    <h1>{{ __('photo.title') }}</h1>
+    <p class="muted">{{ __('photo.privacy') }}</p>
+    <p class="muted">{{ __('photo.wait') }}</p>
 
-    <form method="post" action="{{ route('log.photo.store') }}" enctype="multipart/form-data" class="panel">
+    <form method="post" action="{{ route('log.photo.store') }}" enctype="multipart/form-data" class="card">
         @csrf
-        <div>
-            <label for="photo">Meal photo</label>
-            <input type="file" name="photo" id="photo" accept="image/*" required>
+        <div class="field">
+            <label for="photo">{{ __('photo.field') }}</label>
+            {{-- capture="environment" asks a phone to open the rear camera directly,
+                 so the shot gets the system camera's autofocus, exposure and full
+                 resolution — meals are photographed close-up in poor light, exactly
+                 where those matter, and a custom in-page viewfinder would give up all
+                 three. On desktop the attribute is ignored and this stays an ordinary
+                 file picker, which is what a desktop user wants. --}}
+            <input type="file" name="photo" id="photo" accept="image/*" capture="environment" required>
         </div>
-        <p><button type="submit">Recognise</button></p>
+        <button class="btn" type="submit">{{ __('photo.submit') }}</button>
     </form>
 @endsection
