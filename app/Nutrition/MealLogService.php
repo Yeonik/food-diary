@@ -59,6 +59,22 @@ class MealLogService
     }
 
     /**
+     * Build a single-product payload for the barcode path: one Open Food Facts
+     * match, resolved from a code, carried through the session so the commit
+     * reads its numbers from here and never from the form.
+     *
+     * @return array{name: string, grams: float, candidate: array<string, mixed>}
+     */
+    public function pendingForProduct(NutrientMatch $match, float $grams = 100.0): array
+    {
+        return [
+            'name' => $match->description,
+            'grams' => $grams,
+            'candidate' => $this->encodeCandidate($match),
+        ];
+    }
+
+    /**
      * Build pending payloads for every recognised item in a photo.
      *
      * @param  list<RecognisedItem>  $items
@@ -157,6 +173,9 @@ class MealLogService
             'carbs' => $match->profile->carbsG,
             'verified' => $match->source()->isVerified(),
             'matched_via' => $match->matchedVia,
+            // Open Food Facts thumbnail, shown only on the confirm screen. Never
+            // persisted, so the library never hotlinks a third party.
+            'image_url' => $match->imageUrl,
             // A personal-library match carries the item id in externalId.
             'food_item_id' => $match->source() === NutrientSource::PersonalLibrary && $match->externalId !== null
                 ? (int) $match->externalId

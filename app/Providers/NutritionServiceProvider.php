@@ -42,6 +42,13 @@ class NutritionServiceProvider extends ServiceProvider
             );
         });
 
+        // Bound once so the barcode lookup path (a controller) and the resolver
+        // (tier 2) share the same configured client.
+        $this->app->singleton(OpenFoodFactsSource::class, fn (): OpenFoodFactsSource => new OpenFoodFactsSource(
+            $this->string('nutrition.open_food_facts.base_url'),
+            $this->string('nutrition.open_food_facts.user_agent'),
+        ));
+
         $this->app->singleton(FoodResolver::class, fn (Application $app): FoodResolver => new FoodResolver(
             $app->make(PersonalLibrarySource::class),
             [
@@ -49,10 +56,7 @@ class NutritionServiceProvider extends ServiceProvider
                     $this->string('nutrition.usda.base_url'),
                     $this->nullableString('nutrition.usda.key'),
                 ),
-                new OpenFoodFactsSource(
-                    $this->string('nutrition.open_food_facts.base_url'),
-                    $this->string('nutrition.open_food_facts.user_agent'),
-                ),
+                $app->make(OpenFoodFactsSource::class),
             ],
         ));
 

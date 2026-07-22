@@ -15,6 +15,11 @@ namespace App\Nutrition;
  * alias that a recognised term matched, when it was not the item's own name. It
  * is shown alongside the full name, never in place of it, so the user can tell
  * which stored variant surfaced.
+ *
+ * {@see $imageUrl} is the Open Food Facts thumbnail URL, when the product has
+ * one. It is shown only on the confirm screen — where a request for this exact
+ * product is already in flight — and never persisted or shown in the library,
+ * so browsing the library never hotlinks a third party.
  */
 final readonly class NutrientMatch
 {
@@ -23,6 +28,7 @@ final readonly class NutrientMatch
         public NutrientProfile $profile,
         public ?string $externalId = null,
         public ?string $matchedVia = null,
+        public ?string $imageUrl = null,
     ) {}
 
     public function source(): NutrientSource
