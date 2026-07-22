@@ -46,10 +46,10 @@ class PendingLogController extends Controller
             'meal' => ['required', Rule::enum(MealType::class)],
             'date' => ['nullable', 'date'],
             'items' => ['required', 'array'],
-            'items.*.include' => ['nullable', 'boolean'],
-            // Either a numeric candidate index or the "manual" sentinel — the
-            // package-label path, where the numbers below are used instead.
-            'items.*.candidate' => ['nullable', 'regex:/^(manual|\d+)$/'],
+            // One choice per dish: a candidate index, the "manual" sentinel (the
+            // package-label path), or "skip" (do not log this dish). No default:
+            // an unresolved dish carries no value and is simply not logged.
+            'items.*.candidate' => ['nullable', 'regex:/^(manual|skip|\d+)$/'],
             'items.*.grams' => ['nullable', 'numeric', 'min:0.1', 'max:5000'],
             // Hand-entered values, per 100 g: macros cap at 100, energy a little
             // above pure fat (9 kcal/g). Required only when "manual" is chosen,
@@ -77,7 +77,7 @@ class PendingLogController extends Controller
         // First pass: reject an incomplete manual row before anything is
         // written, so a bad entry never leaves a half-logged meal behind.
         foreach ($validated['items'] as $index => $choice) {
-            if (empty($choice['include']) || ($choice['candidate'] ?? null) !== 'manual') {
+            if (($choice['candidate'] ?? null) !== 'manual') {
                 continue;
             }
 
@@ -86,7 +86,7 @@ class PendingLogController extends Controller
             foreach (['kcal', 'protein', 'fat', 'carbs'] as $field) {
                 if (($manual[$field] ?? null) === null || $manual[$field] === '') {
                     return back()
-                        ->withErrors(["items.{$index}.manual.{$field}" => 'Fill in every value per 100 g from the label.'])
+                        ->withErrors(["items.{$index}.manual.{$field}" => __('confirm.manual_incomplete')])
                         ->withInput();
                 }
             }
@@ -99,7 +99,11 @@ class PendingLogController extends Controller
         $logged = 0;
 
         foreach ($validated['items'] as $index => $choice) {
-            if (empty($choice['include'])) {
+            $pick = $choice['candidate'] ?? null;
+
+            // No source chosen, or an explicit skip: this dish is not logged.
+            // Nothing is auto-selected, so an untouched dish carries no value.
+            if ($pick === null || $pick === 'skip') {
                 continue;
             }
 
@@ -110,7 +114,7 @@ class PendingLogController extends Controller
 
             $grams = (float) ($choice['grams'] ?? $item['grams']);
 
-            if (($choice['candidate'] ?? null) === 'manual') {
+            if ($pick === 'manual') {
                 $log->commitManual(
                     $this->manualName($choice, (string) $item['name']),
                     $this->manualProfile($choice),
@@ -124,7 +128,7 @@ class PendingLogController extends Controller
                 continue;
             }
 
-            $candidateIndex = (int) ($choice['candidate'] ?? 0);
+            $candidateIndex = (int) $pick;
             $candidate = $item['candidates'][$candidateIndex] ?? null;
             if ($candidate === null) {
                 continue;
@@ -145,12 +149,14 @@ class PendingLogController extends Controller
         $request->session()->forget(self::SESSION_KEY);
 
         if ($logged === 0) {
-            return redirect()->route('diary.index')->with('status', 'Nothing was selected, so nothing was logged.');
+            return redirect()->route('diary.index')->with('status', __('confirm.nothing_selected'));
         }
 
         return redirect()
             ->route('diary.index', ['date' => $loggedAt->toDateString()])
-            ->with('status', $logged === 1 ? 'Logged one item.' : "Logged {$logged} items.");
+            ->with('status', $logged === 1
+                ? __('confirm.logged_one')
+                : __('confirm.logged_many', ['count' => $logged]));
     }
 
     /**

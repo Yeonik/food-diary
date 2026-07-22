@@ -79,13 +79,14 @@ class MealPhotoFlowTest extends TestCase
         $this->get(route('log.confirm'))
             ->assertOk()
             ->assertSee('Grilled chicken breast')
-            ->assertSee('Your library');
+            // Provenance is shown: a library match reads as verified (the check).
+            ->assertSee('✓');
 
         $response = $this->post(route('log.confirm.store'), [
             'meal' => 'lunch',
             'items' => [
-                ['include' => 1, 'candidate' => 0, 'grams' => 180],
-                ['include' => 1, 'candidate' => 0, 'grams' => 150],
+                ['candidate' => 0, 'grams' => 180],
+                ['candidate' => 0, 'grams' => 150],
             ],
         ]);
 

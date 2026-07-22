@@ -78,11 +78,12 @@ class LibraryMatchingTest extends TestCase
         $this->uploadPhoto();
 
         // It appears as a candidate, shown by its full stored name and marked as
-        // coming from the personal library — no longer lost.
+        // a verified library match (the check glyph) — no longer lost.
         $this->get(route('log.confirm'))
             ->assertOk()
             ->assertSee('Победа 100% Charged без добавления сахара Stevia')
-            ->assertSee('Your library');
+            ->assertSee(__('source.personal_library'))
+            ->assertSee('✓');
     }
 
     public function test_library_candidates_are_capped(): void

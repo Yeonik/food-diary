@@ -36,3 +36,32 @@ document.addEventListener('change', function (event) {
         card.classList.toggle('card--dim', !toggle.checked);
     }
 });
+
+// Confirm screen: the submit button stays disabled until every dish has a
+// source chosen. Server-side the same rule holds — a dish with no choice is not
+// logged — so this is UX, not the guarantee.
+function updateConfirmSubmit() {
+    const submit = document.querySelector('[data-confirm-submit]');
+    if (!submit) {
+        return;
+    }
+
+    const groups = new Set();
+    const chosen = new Set();
+    document.querySelectorAll('input[type="radio"][data-confirm-source]').forEach(function (radio) {
+        groups.add(radio.name);
+        if (radio.checked) {
+            chosen.add(radio.name);
+        }
+    });
+
+    submit.disabled = chosen.size !== groups.size;
+}
+
+document.addEventListener('change', function (event) {
+    if (event.target.matches('input[type="radio"][data-confirm-source]')) {
+        updateConfirmSubmit();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', updateConfirmSubmit);

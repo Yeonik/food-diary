@@ -433,5 +433,21 @@ input:focus, select:focus, textarea:focus {
 .macro__seg--f { background: var(--muted); }
 .macro__seg--c { background: var(--primary-tint); }
 .macro__legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+/* --- Confirm screen -------------------------------------------------------- */
+
+.confirm-dish__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.confirm-dish__name { font-weight: 800; font-size: 16px; }
+.confirm-dish__portion { width: 120px; flex: none; margin-bottom: 0; }
+
+.sources { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.source { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-md); cursor: pointer; }
+.source input[type='radio'] { width: auto; min-height: 0; margin-top: 3px; flex: none; }
+.source__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.source__name { font-weight: 600; }
+.source:has(input:checked) { border-color: var(--primary); background: var(--primary-tint); }
+.source--skip { color: var(--text-muted); }
+
+.manual-fields { padding: 8px 0 2px; }
 .macro__key { display: inline-flex; align-items: center; gap: 5px; }
 .macro__swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
