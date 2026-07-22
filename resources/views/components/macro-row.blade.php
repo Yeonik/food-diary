@@ -15,7 +15,7 @@
 <div class="{{ $classes }}">
     <div class="macro-row__head">
         <span>{{ $label }}</span>
-        <span class="macro-row__value">{{ \App\Support\Format::macro($value) }}@if (! is_null($goal)) / {{ \App\Support\Format::macro($goal) }}@endif {{ __('nutrition.g') }}</span>
+        <span class="macro-row__value">{{ \App\Support\Format::macro($value) }}@if (! is_null($goal)) / {{ \App\Support\Format::macroGoal($goal) }}@endif {{ __('nutrition.g') }}</span>
     </div>
     @if (! is_null($goal))
         <div class="macro-row__track"><div class="macro-row__fill" style="width: {{ $pct }}%"></div></div>

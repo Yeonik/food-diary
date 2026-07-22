@@ -44,10 +44,16 @@ final class Format
         return self::number(round($value), 0);
     }
 
-    /** A macronutrient amount, one decimal. */
+    /** A macronutrient amount, one decimal (what was eaten — 0,3 stays 0,3). */
     public static function macro(float $value): string
     {
         return self::number($value, 1);
+    }
+
+    /** A macronutrient TARGET, a whole number (75 g, never 75,0). */
+    public static function macroGoal(float $value): string
+    {
+        return self::number(round($value), 0);
     }
 
     /** A body-weight reading, one decimal (77,5 in ru). */
