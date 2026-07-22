@@ -9,7 +9,7 @@
                       points="@foreach ($points as $p){{ $p['x'] }},{{ $p['y'] }} @endforeach" />
         @endif
         @foreach ($points as $p)
-            <circle class="chart__dot" cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="3">
+            <circle class="chart__dot" cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="4">
                 <title>{{ $p['label'] }}</title>
             </circle>
         @endforeach

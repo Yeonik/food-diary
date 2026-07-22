@@ -10,6 +10,7 @@ return [
     'empty_title' => 'Not enough data',
     'empty_body' => 'Charts appear once a few days of entries have built up.',
     'kcal_per_day' => 'Calories per day',
+    'goal_ref' => 'goal :kcal',
     'weight_trend' => 'Weight',
     'macro_split' => 'Macro split',
     'avg_per_day' => 'Average per day',

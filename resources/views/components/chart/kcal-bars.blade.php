@@ -36,7 +36,7 @@
         @endphp
         <rect class="chart__bar {{ $day['kcal'] === 0 ? 'chart__bar--empty' : '' }}"
               x="{{ round($x, 1) }}" y="{{ round($y, 1) }}"
-              width="{{ round($barW, 1) }}" height="{{ round($height, 1) }}" rx="2">
+              width="{{ round($barW, 1) }}" height="{{ round($height, 1) }}" rx="4">
             <title>{{ $day['date'] }}: {{ \App\Support\Format::kcal($day['kcal']) }}</title>
         </rect>
         @if ($showLabels)

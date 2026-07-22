@@ -50,6 +50,8 @@ class HistoryController extends Controller
             'summary' => $aggregator->summarise($entries, $from, $to),
             'goalKcal' => $goal?->daily_kcal !== null ? (int) round($goal->daily_kcal) : null,
             'weightPoints' => WeightSeries::points($weightEntries),
+            // The most recent reading in the window, for the weight card's header.
+            'latestWeight' => $weightEntries->sortBy('recorded_on')->last()?->weight_kg,
         ]);
     }
 

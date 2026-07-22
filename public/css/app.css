@@ -320,11 +320,20 @@ a:hover { text-decoration: underline; }
 
 /* --- Tiles (history summary) ---------------------------------------------- */
 
-.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.tile { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px; }
-.tile__label { font-size: 12px; color: var(--muted); }
-.tile__value { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; }
-@media (max-width: 400px) { .tiles { grid-template-columns: 1fr; } }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.tile { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-card); }
+.tile__label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.tile__value { font-weight: 800; font-size: 24px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tile__unit { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.tile__chart { margin-top: 10px; }
+
+/* History layout */
+.history__period { margin-bottom: 16px; }
+.history__charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.history__tiles { margin-top: 16px; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.chart-head__title { font-size: 14px; font-weight: 800; }
+.chart-head__meta { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
 
 /* --- Forms ----------------------------------------------------------------- */
 
@@ -376,7 +385,8 @@ input:focus, select:focus, textarea:focus {
 
 /* Pill segmented switch (kit): track on --bg, active pane white with a soft lift. */
 .segmented { display: inline-flex; gap: 4px; background: var(--surface); padding: 3px; border-radius: var(--r-10); }
-.segmented__btn { min-height: 34px; padding: 6px 16px; border: 0; border-radius: var(--r-8); background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+.segmented__btn { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 6px 16px; border: 0; border-radius: var(--r-8); background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; }
+.segmented__btn:hover { text-decoration: none; }
 .segmented__btn.is-active { background: #fff; color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
 
 /* --- Buttons --------------------------------------------------------------- */
@@ -483,19 +493,22 @@ input:focus, select:focus, textarea:focus {
 /* --- Charts (hand-rolled SVG) --------------------------------------------- */
 
 .chart { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; }
-.chart__bar { fill: var(--primary); }
+/* One soft tone for every bar whatever the value — over the goal never reddens
+   (hard rule 4). The goal is a dashed teal reference that judges nothing. */
+.chart__bar { fill: #cfe0dd; }
 .chart__bar--empty { fill: var(--border); }        /* a day with no entries: zero, drawn, not skipped */
-.chart__goal { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
-.chart__line { fill: none; stroke: var(--primary); stroke-width: 2; }
-.chart__dot { fill: var(--primary); }
-.chart__axis { fill: var(--muted); font-size: 10px; }
-.chart__grid { stroke: var(--border); stroke-width: 1; }
+.chart__goal { stroke: var(--primary); stroke-width: 1.6; stroke-dasharray: 6 6; fill: none; opacity: 0.8; }
+.chart__line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.chart__dot { fill: #fff; stroke: var(--primary); stroke-width: 2.6; }
+.chart__axis { fill: var(--muted); font-size: 11px; font-weight: 600; }
+.chart__grid { stroke: #eef1f1; stroke-width: 1; }
 
-.macro { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+/* Macro split — a neutral proportion bar, teal family only, never a verdict. */
+.macro { display: flex; height: 12px; border-radius: 6px; overflow: hidden; }
 .macro__seg--p { background: var(--primary); }
-.macro__seg--f { background: var(--muted); }
-.macro__seg--c { background: var(--primary-tint); }
-.macro__legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+.macro__seg--f { background: #4f8a86; }
+.macro__seg--c { background: #a9cbc7; }
+.macro__legend { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 
 /* --- Confirm screen -------------------------------------------------------- */
 
@@ -526,8 +539,6 @@ input:focus, select:focus, textarea:focus {
 .dialog__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .dialog__head h2 { font-size: 17px; }
 .dialog__close { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
-.macro__key { display: inline-flex; align-items: center; gap: 5px; }
-.macro__swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
 /* ==========================================================================
    Kit components (design/prototype_v6/components) — presentational primitives

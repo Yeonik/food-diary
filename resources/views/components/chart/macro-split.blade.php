@@ -21,8 +21,8 @@
         <div class="macro__seg--c" style="width: {{ $c }}%"></div>
     </div>
     <div class="macro__legend">
-        <span class="macro__key"><span class="macro__swatch macro__seg--p"></span>{{ __('nutrition.protein') }} {{ $p }}%</span>
-        <span class="macro__key"><span class="macro__swatch macro__seg--f"></span>{{ __('nutrition.fat') }} {{ $f }}%</span>
-        <span class="macro__key"><span class="macro__swatch macro__seg--c"></span>{{ __('nutrition.carbs') }} {{ $c }}%</span>
+        <span>{{ __('nutrition.p') }} {{ $p }}%</span>
+        <span>{{ __('nutrition.f') }} {{ $f }}%</span>
+        <span>{{ __('nutrition.c') }} {{ $c }}%</span>
     </div>
 @endif
