@@ -424,42 +424,54 @@ input:focus, select:focus, textarea:focus {
 .datestep a, .datestep span { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; font-weight: 700; }
 .datestep__label { font-size: 16px; }
 
-/* --- Progress ring (day summary, variant A) -------------------------------
-   Never changes colour by state (hard rule 4): primary fill on its tint track,
-   whatever the number. When there is no goal there is no proportion to draw and
-   the ring is replaced by the plain eaten figure (rendered without .ring). */
+/* --- Day screen (transcribed from prototype_v6/maket.html) -----------------
+   Two columns on a wide screen: the meals grid beside a sticky summary card.
+   Stacked on mobile with the summary on top. The ring never changes colour by
+   state (hard rule 4) — see the RingSummary component. */
 
-.ring { display: block; }
-.ring__track { fill: none; stroke: var(--primary-tint); }
-.ring__value { fill: none; stroke: var(--primary); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
-.ring__center { text-align: center; }
+.day { display: flex; gap: 16px; align-items: flex-start; flex-direction: column; }
+.day__summary {
+    width: 100%; order: 1;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 22px; box-shadow: var(--shadow-card);
+}
+.day__meals { width: 100%; order: 2; }
+.day__meals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.day__macros { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.day__estimates { margin-top: 14px; }
 
-.ring__num { font-weight: 800; font-size: 26px; fill: var(--text); font-variant-numeric: tabular-nums; }
-.ring__cap { font-size: 10px; fill: var(--muted); font-weight: 600; }
+/* The 720px content column is only wide enough for both columns past this. */
+@media (min-width: 1000px) {
+    .day { flex-direction: row; }
+    .day__meals { flex: 1; min-width: 0; order: 1; }
+    .day__summary { width: 320px; flex-shrink: 0; order: 2; position: sticky; top: 16px; }
+}
 
-.summary { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.summary__figure { min-width: 120px; }
-.summary__label { font-size: 13px; color: var(--muted); font-weight: 600; }
-.summary__eaten { font-weight: 800; font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.summary__remaining { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
-.summary__macros { display: flex; gap: 16px; margin-top: 8px; font-variant-numeric: tabular-nums; }
-.summary__macro { font-size: 13px; color: var(--text-muted); }
-.summary__macro b { color: var(--text); font-weight: 700; }
+/* Meal card — the grid gap owns the spacing, not the card's own margin. */
+.meal-card { margin-bottom: 0; }
+.meal-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.meal-card__title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.meal-card__name { font-size: 16px; font-weight: 800; }
+.meal-card__kcal { font-size: 13px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+.meal-card__add {
+    width: 30px; height: 30px; flex: none; border-radius: 50%;
+    background: var(--primary-tint); color: var(--primary); border: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1; cursor: pointer; text-decoration: none;
+}
+.meal-card__add:hover { text-decoration: none; }
 
-/* Meal section on the Day screen */
-.meal { margin-top: 20px; }
-.meal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-.meal__name { font-weight: 800; font-size: 16px; }
-.meal__sub { color: var(--muted); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
-.meal__add { margin-top: 8px; }
-
-.entry { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
-.entry:last-of-type { border-bottom: 0; }
+/* Entry row — a native <details>, so the edit / delete icons reveal on tap
+   without JavaScript rather than sitting there as permanent text links. */
+.entry { border-top: 1px solid var(--border); }
+.entry__row { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; list-style: none; }
+.entry__row::-webkit-details-marker { display: none; }
 .entry__body { flex: 1; min-width: 0; }
-.entry__name { font-weight: 600; }
-.entry__meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
-.entry__kcal { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.entry__actions { display: flex; gap: 4px; align-items: center; }
+.entry__name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry__meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.entry__grams { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.entry__kcal { font-size: 14px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.entry__actions { display: flex; justify-content: flex-end; gap: 6px; padding: 0 0 10px; }
 
 /* Empty state — the first thing a new user sees */
 .empty { text-align: center; padding: 44px 16px; }

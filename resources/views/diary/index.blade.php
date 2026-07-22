@@ -10,81 +10,74 @@
     </div>
 
     @if (! $hasAnyEntry)
-        {{-- Nothing logged: only the icon and the invitation, no zero summary. --}}
-        <div class="empty">
-            <x-icon name="utensils" class="empty__icon" />
-            <div class="empty__title">{{ __('day.empty_title') }}</div>
-            <p class="empty__body">{{ __('day.empty_body') }}</p>
-            <div class="empty__actions">
-                <a class="btn" href="{{ route('log.photo') }}"><x-icon name="camera" /> {{ __('nav.add_photo') }}</a>
-                <a class="btn btn--ghost" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog"><x-icon name="plus" /> {{ __('nav.add_manual') }}</a>
-            </div>
-        </div>
+        <x-empty-state icon="day" :title="__('day.empty_title')" :body="__('day.empty_body')">
+            <x-slot:action>
+                <x-button href="{{ route('log.photo') }}" icon="camera">{{ __('nav.add_photo') }}</x-button>
+                <x-button variant="secondary" href="{{ route('log.manual') }}" icon="plus" data-dialog-open="manual-dialog">{{ __('nav.add_manual') }}</x-button>
+            </x-slot:action>
+        </x-empty-state>
     @else
-        <div class="card">
-            <div class="summary">
-                @if ($summary->hasGoal())
-                    <x-ring :eaten="$summary->kcal" :target="$goal->daily_kcal" />
-                    <div class="summary__figure">
-                        <div class="summary__label">{{ __('day.eaten_today') }}</div>
-                        <div class="summary__remaining">
-                            {{ __('day.remaining') }}: {{ \App\Support\Format::kcal($summary->remainingKcal) }} {{ __('nutrition.kcal') }}
-                        </div>
-                    </div>
-                @else
-                    <div class="summary__figure">
-                        <div class="summary__label">{{ __('day.eaten_today') }}</div>
-                        <div class="summary__eaten">{{ \App\Support\Format::kcal($summary->kcal) }}
-                            <span class="caption">{{ __('nutrition.kcal') }}</span></div>
-                    </div>
+        <div class="day">
+            {{-- Meals: a card each, in a responsive grid. On desktop this column
+                 sits left of the summary; on mobile it drops below it. --}}
+            <div class="day__meals">
+                <div class="day__meals-grid">
+                    @foreach ($visibleMeals as $meal)
+                        @php $rows = $entriesByMeal[$meal->value]; @endphp
+                        <x-card variant="meal" pad="compact" class="meal-card">
+                            <div class="meal-card__head">
+                                <div class="meal-card__title">
+                                    <span class="meal-card__name">{{ __('meal.'.$meal->value) }}</span>
+                                    <span class="meal-card__kcal">{{ \App\Support\Format::kcal($rows->sum(fn ($e) => round($e->kcal))) }} {{ __('nutrition.kcal') }}</span>
+                                </div>
+                                <a class="meal-card__add" href="{{ route('log.manual', ['meal' => $meal->value]) }}"
+                                   data-dialog-open="manual-dialog" aria-label="{{ __('day.add_to_meal') }}">+</a>
+                            </div>
+
+                            @foreach ($rows as $entry)
+                                {{-- The row reveals its edit / delete actions when tapped
+                                     (native <details>, so it works without JavaScript). --}}
+                                <details class="entry">
+                                    <summary class="entry__row">
+                                        <div class="entry__body">
+                                            <div class="entry__name">{{ $entry->name }}</div>
+                                            <div class="entry__meta">
+                                                <span class="entry__grams">{{ \App\Support\Format::grams($entry->grams) }} {{ __('nutrition.g') }}</span>
+                                                <x-source-chip :source="$entry->source" />
+                                            </div>
+                                        </div>
+                                        <span class="entry__kcal">{{ \App\Support\Format::kcal($entry->kcal) }}</span>
+                                    </summary>
+                                    <div class="entry__actions">
+                                        <x-icon-button href="{{ route('entries.edit', $entry) }}" :label="__('common.edit')" icon="edit" />
+                                        <form method="post" action="{{ route('entries.destroy', $entry) }}"
+                                              onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
+                                            @csrf @method('DELETE')
+                                            <x-icon-button type="submit" tone="danger" :label="__('common.delete')" icon="delete" />
+                                        </form>
+                                    </div>
+                                </details>
+                            @endforeach
+                        </x-card>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Summary: the ring (or the plain eaten number), then the three macro
+                 cards. Sticky beside the meals on desktop, on top on mobile. --}}
+            <div class="day__summary">
+                <x-ring-summary :eaten="$summary->kcal" :goal="$goal?->daily_kcal" />
+
+                <div class="day__macros">
+                    <x-macro-row kind="protein" :label="__('nutrition.protein')" :value="$summary->proteinG" :goal="$goal?->protein_g" />
+                    <x-macro-row kind="fat" :label="__('nutrition.fat')" :value="$summary->fatG" :goal="$goal?->fat_g" />
+                    <x-macro-row kind="carb" :label="__('nutrition.carbs')" :value="$summary->carbsG" :goal="$goal?->carbs_g" />
+                </div>
+
+                @if ($summary->hasEstimates)
+                    <p class="day__estimates prov prov--estimate">{{ __('day.has_estimates') }}</p>
                 @endif
             </div>
-            <div class="summary__macros">
-                <span class="summary__macro">{{ __('nutrition.protein') }} <b>{{ \App\Support\Format::macro($summary->proteinG) }}</b> {{ __('nutrition.g') }}</span>
-                <span class="summary__macro">{{ __('nutrition.fat') }} <b>{{ \App\Support\Format::macro($summary->fatG) }}</b> {{ __('nutrition.g') }}</span>
-                <span class="summary__macro">{{ __('nutrition.carbs') }} <b>{{ \App\Support\Format::macro($summary->carbsG) }}</b> {{ __('nutrition.g') }}</span>
-            </div>
         </div>
-
-        @if ($summary->hasEstimates)
-            <p class="prov prov--estimate">{{ __('day.has_estimates') }}</p>
-        @endif
-
-        @foreach ($visibleMeals as $meal)
-            @php $rows = $entriesByMeal[$meal->value]; @endphp
-            <section class="meal">
-                <div class="meal__head">
-                    <span class="meal__name">{{ __('meal.'.$meal->value) }}</span>
-                    <span class="meal__sub">{{ \App\Support\Format::kcal($rows->sum(fn ($e) => round($e->kcal))) }} {{ __('nutrition.kcal') }}</span>
-                </div>
-
-                @foreach ($rows as $entry)
-                    <div class="entry">
-                        <div class="entry__body">
-                            <div class="entry__name">{{ $entry->name }}</div>
-                            <div class="entry__meta">
-                                {{ \App\Support\Format::grams($entry->grams) }} {{ __('nutrition.g') }}
-                                · <x-prov :source="$entry->source" />
-                            </div>
-                        </div>
-                        <span class="entry__kcal">{{ \App\Support\Format::kcal($entry->kcal) }}</span>
-                        <div class="entry__actions">
-                            <a class="btn btn--quiet" href="{{ route('entries.edit', $entry) }}">{{ __('common.edit') }}</a>
-                            <form method="post" action="{{ route('entries.destroy', $entry) }}"
-                                  onsubmit="return confirm('{{ __('common.confirm_delete') }}')">
-                                @csrf @method('DELETE')
-                                <button class="btn btn--danger-quiet" type="submit">{{ __('common.delete') }}</button>
-                            </form>
-                        </div>
-                    </div>
-                @endforeach
-
-                <div class="meal__add">
-                    <a class="btn btn--ghost btn--sm" href="{{ route('log.manual', ['meal' => $meal->value]) }}" data-dialog-open="manual-dialog">
-                        <x-icon name="plus" /> {{ __('day.add_to_meal') }}
-                    </a>
-                </div>
-            </section>
-        @endforeach
     @endif
 @endsection

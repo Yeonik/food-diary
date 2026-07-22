@@ -18,7 +18,7 @@
     @if ($hasGoal)
         <div class="ring-summary__ring">
             <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
-                <circle cx="75" cy="75" r="{{ $r }}" fill="none" stroke="var(--primary-tint)" stroke-width="13"/>
+                <circle cx="75" cy="75" r="{{ $r }}" fill="none" stroke="#eef1f1" stroke-width="13"/>
                 <circle cx="75" cy="75" r="{{ $r }}" fill="none" stroke="var(--primary)" stroke-width="13"
                         stroke-linecap="round" stroke-dasharray="{{ $dash }} {{ $full }}" transform="rotate(-90 75 75)"/>
             </svg>
