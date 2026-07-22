@@ -16,6 +16,8 @@ use App\Nutrition\Exceptions\InvalidPhotoException;
  *   2. Strip EXIF by re-encoding through GD — phone photos carry GPS, and
  *      sending home coordinates to an API is a disclosure the user did not ask
  *      for. This is a README claim, so it is enforced here, not just promised.
+ *      The EXIF orientation is first baked into the pixels, so dropping the tag
+ *      leaves the photo standing correctly rather than on its side.
  *   3. Store under a GENERATED name — the client filename is discarded and
  *      never becomes part of a path.
  */
@@ -47,6 +49,13 @@ class PhotoPreparer
         if ($image === false) {
             throw new InvalidPhotoException('The image could not be decoded.');
         }
+
+        // A phone records the shot's rotation as an EXIF tag rather than
+        // rotating the pixels. GD decodes the raw pixels and drops EXIF, so
+        // without this the tag would be lost and the photo stored on its side.
+        // Bake the rotation into the pixels here, while the source EXIF is still
+        // readable — so the picture stands correctly AND carries no orientation.
+        $image = $this->applyOrientation($image, $sourcePath);
 
         // Step 2 begins — resize on a freshly decoded canvas. Neither the
         // decode nor the JPEG re-encode below carries the source's EXIF block.
@@ -139,6 +148,41 @@ class PhotoPreparer
         }
 
         return $out;
+    }
+
+    /**
+     * Apply the source's EXIF orientation to the pixels, so the stored image
+     * stands the right way up once the tag is gone. Covers all eight orientation
+     * values — the six that rotate, plus the two pure mirrors. Sources without
+     * EXIF (PNG, WebP, an untagged JPEG) report orientation 1 and are untouched.
+     */
+    private function applyOrientation(\GdImage $image, string $sourcePath): \GdImage
+    {
+        $exif = @exif_read_data($sourcePath);
+        $orientation = is_array($exif) && isset($exif['Orientation']) ? (int) $exif['Orientation'] : 1;
+
+        // Orientations 2, 4, 5 and 7 are mirrored; 5 and 7 also carry a rotation.
+        if (in_array($orientation, [2, 4, 5, 7], true)) {
+            imageflip($image, $orientation === 4 ? IMG_FLIP_VERTICAL : IMG_FLIP_HORIZONTAL);
+        }
+
+        // imagerotate turns anticlockwise for a positive angle, so a clockwise
+        // correction is a negative one. 6 → 90° CW, 8 → 90° CCW, 3 → 180°.
+        $angle = match ($orientation) {
+            3 => 180,
+            6, 5 => -90,
+            8, 7 => 90,
+            default => 0,
+        };
+
+        if ($angle !== 0) {
+            $rotated = imagerotate($image, $angle, 0);
+            if ($rotated !== false) {
+                $image = $rotated;
+            }
+        }
+
+        return $image;
     }
 
     private function resizeWithinBounds(\GdImage $image): \GdImage

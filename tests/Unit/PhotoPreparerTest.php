@@ -79,8 +79,63 @@ class PhotoPreparerTest extends TestCase
         }
     }
 
+    public function test_a_phone_photos_orientation_is_baked_into_the_pixels_and_all_exif_removed(): void
+    {
+        $fixture = $this->phoneFixture();
+
+        // Sanity: a real phone-like frame — landscape pixels tagged to display
+        // rotated 90° clockwise, carrying GPS and camera identity.
+        $before = @exif_read_data($fixture);
+        $this->assertIsArray($before);
+        $this->assertSame(6, (int) ($before['Orientation'] ?? 0), 'Fixture should carry Orientation 6.');
+        $this->assertArrayHasKey('GPSLatitude', $before);
+        $size = getimagesize($fixture);
+        $this->assertIsArray($size);
+        $this->assertSame([64, 48], [$size[0], $size[1]], 'Fixture pixels are stored landscape.');
+
+        $prepared = (new PhotoPreparer)->prepare($fixture, $this->workDir);
+
+        // The tag is gone with the rest of the EXIF — no sections, no orientation,
+        // no GPS survive.
+        $after = @exif_read_data($prepared->path);
+        $this->assertIsArray($after);
+        $this->assertSame('', $after['SectionsFound'] ?? null, 'The prepared image still has metadata sections.');
+        $this->assertArrayNotHasKey('Orientation', $after);
+        $this->assertArrayNotHasKey('GPSLatitude', $after);
+
+        // But the rotation was applied to the PIXELS, not lost with the tag: the
+        // stored 64×48 landscape now stands as a 48×64 portrait.
+        $this->assertSame(48, $prepared->width);
+        $this->assertSame(64, $prepared->height);
+
+        // And in the right direction — Orientation 6 rotates clockwise, which
+        // moves the left (red) half of the stored frame to the top.
+        $out = imagecreatefromjpeg($prepared->path);
+        $this->assertNotFalse($out);
+        $this->assertTrue($this->redDominates($out, 24, 12), 'The top of the corrected image should be the red half.');
+        $this->assertFalse($this->redDominates($out, 24, 52), 'The bottom of the corrected image should be the blue half.');
+        imagedestroy($out);
+    }
+
+    /**
+     * Whether the pixel at ($x, $y) is dominantly red rather than blue. Solid
+     * colour blocks survive JPEG quantisation well away from their boundary, so
+     * comparing the channels is a stable check of which half landed here.
+     */
+    private function redDominates(\GdImage $image, int $x, int $y): bool
+    {
+        $rgb = imagecolorat($image, $x, $y);
+
+        return (($rgb >> 16) & 0xFF) > ($rgb & 0xFF);
+    }
+
     private function fixture(): string
     {
         return dirname(__DIR__).DIRECTORY_SEPARATOR.'Fixtures'.DIRECTORY_SEPARATOR.'meal-with-gps.jpg';
+    }
+
+    private function phoneFixture(): string
+    {
+        return dirname(__DIR__).DIRECTORY_SEPARATOR.'Fixtures'.DIRECTORY_SEPARATOR.'phone-portrait-gps.jpg';
     }
 }
