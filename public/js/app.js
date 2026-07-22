@@ -65,3 +65,33 @@ document.addEventListener('change', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', updateConfirmSubmit);
+
+// Dialogs: [data-dialog-open] opens by id, [data-dialog-close] closes, and a
+// click on the backdrop closes too. Esc is handled natively by <dialog>. The
+// openers are ordinary links, so without JS they navigate to a full page.
+document.addEventListener('click', function (event) {
+    const opener = event.target.closest('[data-dialog-open]');
+    if (opener) {
+        const dialog = document.getElementById(opener.dataset.dialogOpen);
+        if (dialog && typeof dialog.showModal === 'function') {
+            event.preventDefault();
+            dialog.showModal();
+        }
+        return;
+    }
+
+    const closer = event.target.closest('[data-dialog-close]');
+    if (closer) {
+        const owner = closer.closest('dialog');
+        if (owner) {
+            owner.close();
+        }
+        return;
+    }
+
+    // A click landing on the dialog element itself is a click on the backdrop,
+    // outside the panel — close it.
+    if (event.target.matches('dialog.dialog')) {
+        event.target.close();
+    }
+});

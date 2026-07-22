@@ -1,19 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Log manually')
+@section('title', __('manual.title'))
 
 @section('content')
-    <h1>Log manually</h1>
-    <p class="muted">Search your library, USDA and Open Food Facts by name.</p>
+    <h1>{{ __('manual.title') }}</h1>
+    <p class="muted">{{ __('manual.intro') }}</p>
 
-    <form method="post" action="{{ route('log.manual.store') }}" class="panel">
+    <form method="post" action="{{ route('log.manual.store') }}" class="card">
         @csrf
-        <div class="row">
-            <div style="flex:1">
-                <label for="name">Food name</label>
-                <input type="text" name="name" id="name" value="{{ old('name') }}" style="width:100%" required autofocus>
-            </div>
-            <div><button type="submit">Search</button></div>
+        <div class="field">
+            <label for="name">{{ __('manual.name') }}</label>
+            <input type="text" name="name" id="name" value="{{ old('name') }}" required autofocus>
         </div>
+        <button class="btn" type="submit">{{ __('manual.search') }}</button>
     </form>
 @endsection

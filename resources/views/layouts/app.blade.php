@@ -39,7 +39,7 @@
             {{-- Desktop quick-add: two compact buttons, top-right. On mobile the
                  round FAB below does this job, so this bar is desktop-only. --}}
             <div class="quickadd">
-                <a class="btn btn--ghost btn--sm" href="{{ route('log.manual') }}">
+                <a class="btn btn--ghost btn--sm" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
                     <x-icon name="plus" /> {{ __('nav.add_manual') }}
                 </a>
                 <a class="btn btn--sm" href="{{ route('log.photo') }}">
@@ -84,11 +84,30 @@
             <a class="fab__action" href="{{ route('log.photo') }}">
                 <x-icon name="camera" /> <span>{{ __('nav.add_photo') }}</span>
             </a>
-            <a class="fab__action" href="{{ route('log.manual') }}">
+            <a class="fab__action" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
                 <x-icon name="manual" /> <span>{{ __('nav.add_manual') }}</span>
             </a>
         </div>
     </details>
+
+    {{-- Manual entry as a dialog: opened by the "by hand" actions with JS, closed
+         by Esc (native) or a click outside. Without JS the same actions are plain
+         links to /log/manual, so the flow still works. --}}
+    <dialog id="manual-dialog" class="dialog">
+        <form method="post" action="{{ route('log.manual.store') }}" class="dialog__panel">
+            @csrf
+            <div class="dialog__head">
+                <h2>{{ __('manual.title') }}</h2>
+                <button type="button" class="dialog__close" data-dialog-close aria-label="{{ __('common.cancel') }}">×</button>
+            </div>
+            <p class="muted">{{ __('manual.intro') }}</p>
+            <div class="field">
+                <label for="manual-name">{{ __('manual.name') }}</label>
+                <input type="text" id="manual-name" name="name" required>
+            </div>
+            <button class="btn btn--block" type="submit">{{ __('manual.search') }}</button>
+        </form>
+    </dialog>
 
     <script src="{{ asset('js/app.js') }}" defer></script>
 </body>

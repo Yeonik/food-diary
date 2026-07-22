@@ -17,7 +17,7 @@
             <p class="empty__body">{{ __('day.empty_body') }}</p>
             <div class="empty__actions">
                 <a class="btn" href="{{ route('log.photo') }}"><x-icon name="camera" /> {{ __('nav.add_photo') }}</a>
-                <a class="btn btn--ghost" href="{{ route('log.manual') }}"><x-icon name="plus" /> {{ __('nav.add_manual') }}</a>
+                <a class="btn btn--ghost" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog"><x-icon name="plus" /> {{ __('nav.add_manual') }}</a>
             </div>
         </div>
     @else
@@ -80,7 +80,7 @@
                 @endforeach
 
                 <div class="meal__add">
-                    <a class="btn btn--ghost btn--sm" href="{{ route('log.manual', ['meal' => $meal->value]) }}">
+                    <a class="btn btn--ghost btn--sm" href="{{ route('log.manual', ['meal' => $meal->value]) }}" data-dialog-open="manual-dialog">
                         <x-icon name="plus" /> {{ __('day.add_to_meal') }}
                     </a>
                 </div>

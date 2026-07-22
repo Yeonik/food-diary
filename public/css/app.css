@@ -449,5 +449,18 @@ input:focus, select:focus, textarea:focus {
 .source--skip { color: var(--text-muted); }
 
 .manual-fields { padding: 8px 0 2px; }
+
+/* --- Dialog (manual entry) ------------------------------------------------- */
+
+.dialog {
+    border: 0; padding: 0; border-radius: var(--r-lg);
+    width: calc(100% - 32px); max-width: 460px;
+    background: var(--card); color: var(--text);
+}
+.dialog::backdrop { background: rgba(24, 34, 35, 0.45); }
+.dialog__panel { padding: 20px; }
+.dialog__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.dialog__head h2 { font-size: 17px; }
+.dialog__close { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
 .macro__key { display: inline-flex; align-items: center; gap: 5px; }
 .macro__swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }

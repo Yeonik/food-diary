@@ -49,7 +49,7 @@ class ManualAndRecipeWebTest extends TestCase
 
         $this->post(route('log.confirm.store'), [
             'meal' => 'dinner',
-            'items' => [['include' => 1, 'candidate' => 0, 'grams' => 300]],
+            'items' => [['candidate' => 0, 'grams' => 300]],
         ])->assertRedirect();
 
         $entry = MealEntry::query()->where('name', 'Plov')->firstOrFail();
@@ -77,15 +77,17 @@ class ManualAndRecipeWebTest extends TestCase
         $this->assertSame($flour->id, $recipe->ingredients()->first()?->ingredient_id);
     }
 
-    public function test_a_manual_search_can_log_a_library_item(): void
+    public function test_a_manual_search_without_a_photo_can_log_a_library_item(): void
     {
         FoodItem::factory()->direct(kcal: 52, protein: 0.3, fat: 0.2, carbs: 14)->create(['name' => 'Apple']);
         $this->fakeEmptyApis();
 
+        // No photo: the name search alone resolves and reaches the confirm screen,
+        // where the library match is chosen and logged.
         $this->post(route('log.manual.store'), ['name' => 'Apple'])->assertRedirect(route('log.confirm'));
         $this->post(route('log.confirm.store'), [
             'meal' => 'snack',
-            'items' => [['include' => 1, 'candidate' => 0, 'grams' => 150]],
+            'items' => [['candidate' => 0, 'grams' => 150]],
         ])->assertRedirect();
 
         $entry = MealEntry::query()->where('name', 'Apple')->firstOrFail();
