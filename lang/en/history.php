@@ -14,4 +14,7 @@ return [
     'macro_split' => 'Macro split',
     'avg_per_day' => 'Average per day',
     'entries_count' => 'Entries',
+    'from' => 'From',
+    'to' => 'To',
+    'apply' => 'Apply',
 ];
