@@ -74,13 +74,14 @@
         <button class="btn" type="submit">{{ __('settings.save') }}</button>
     </form>
 
-    {{-- Language control. The control only; the switching mechanism (persisted
-         preference and Accept-Language default) is wired in the localisation pass. --}}
+    {{-- Language. Two submit buttons post the choice; it is saved in a cookie
+         and the redirect back re-renders at once. Works without JavaScript. --}}
     <div class="card">
         <div class="setting-title">{{ __('settings.language') }}</div>
-        <div class="segmented" role="group" aria-label="{{ __('settings.language') }}">
-            <button type="button" class="segmented__btn {{ app()->getLocale() === 'ru' ? 'is-active' : '' }}">RU</button>
-            <button type="button" class="segmented__btn {{ app()->getLocale() === 'en' ? 'is-active' : '' }}">EN</button>
-        </div>
+        <form method="post" action="{{ route('locale.update') }}" class="segmented" role="group" aria-label="{{ __('settings.language') }}">
+            @csrf
+            <button type="submit" name="locale" value="ru" class="segmented__btn {{ app()->getLocale() === 'ru' ? 'is-active' : '' }}">RU</button>
+            <button type="submit" name="locale" value="en" class="segmented__btn {{ app()->getLocale() === 'en' ? 'is-active' : '' }}">EN</button>
+        </form>
     </div>
 @endsection

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureUnlocked;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // hosting change; do not carry '*' to somewhere the proxy is not the
         // sole ingress.
         $middleware->trustProxies(at: '*');
+
+        // Resolve the interface language before anything renders — including the
+        // unlock screen, so it too is localised. The choice cookie rides through
+        // the standard cookie encryption like any other.
+        $middleware->appendToGroup('web', SetLocale::class);
 
         // The access gate wraps every web page; it is a no-op unless a password
         // is configured.
