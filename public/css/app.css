@@ -44,29 +44,63 @@
 /* --- Tokens ---------------------------------------------------------------- */
 
 :root {
-    --primary: #1c5d5a;
-    --primary-dark: #164847;
-    --primary-tint: #e7f1ef;
-    --text: #182223;
-    --text-muted: #5b6768;
-    --muted: #9aa6a7;
-    --border: #e8ebec;         /* prototype v5 --line: softer than the old #d5dbdb */
-    --surface: #f5f6f7;        /* prototype v5 --bg: the screen behind the cards */
+    /* Reconciled with design/prototype_v6/tokens/colors.css BY ROLE. The kit's
+       names differ (its --surface is the card, its --bg the screen); ours keep
+       role names. Values are the kit's. */
+    --primary: #1c5d5a;        /* kit --teal */
+    --primary-dark: #164847;   /* kit --teal-2 */
+    --primary-tint: #e7f1ef;   /* kit --teal-soft */
+    --text: #182223;           /* kit --ink */
+    --text-muted: #7c8a8c;     /* kit --muted: secondary text */
+    --muted: #9aa6a7;          /* kit --muted-2: placeholder, faint icons */
+    --muted-2: #9aa6a7;         /* explicit kit alias for placeholders */
+    --border: #e8ebec;         /* kit --line */
+    --surface: #f5f6f7;        /* the screen behind the cards (kit --bg) */
     --surface-2: #f5f6f7;
-    --card: #ffffff;
+    --card: #ffffff;           /* the cards themselves (kit --surface) */
+    --control-off: #d5dbdb;    /* switch / stepper grey (kit literal) */
 
-    /* Prototype v5 accents for tinted cards and chart fills — categorical, never
-       a verdict (hard rule 4): mint pairs with the primary, blue is a cool tile. */
-    --mint: #eef6f1;
-    --blue: #eaf1f8;
+    /* Macro tints — categorical, never a verdict (hard rule 4). */
+    --mint: #eef6f1;           /* protein */
+    --blue: #eaf1f8;           /* fat */
+
+    /* Destructive actions only — never good/bad scoring. */
+    --danger: #b0453a;
+
+    /* Source badges. Amber is USDA's identity colour, NOT a warning; the estimate
+       stays neutral (a dashed grey ≈), never alarming. */
+    --off-fg: #1c5d5a;
+    --off-bg: #e7f1ef;
+    --usda-fg: #7a5b12;
+    --usda-bg: #faf1d8;
 
     /* Provenance: an estimate is visually lighter and never reads as verified. */
     --estimate: #8a6d3b;
 
+    /* Radius — kit scale (design/prototype_v6/tokens/radius.css). */
+    --r-8: 8px;                /* badge inner */
+    --r-9: 9px;                /* icon buttons, stepper */
+    --r-10: 10px;              /* segmented */
+    --r-12: 12px;              /* fields, buttons */
+    --r-14: 14px;              /* list containers, primary mobile buttons */
+    --r-18: 18px;              /* cards */
+    --r-20: 20px;              /* meal cards, sheets */
+    --r-24: 24px;              /* summary card */
+    --r-pill: 20px;            /* chips / badges */
+    --r-round: 50%;            /* avatars, FAB, ring toggles */
+
+    /* Legacy aliases (existing rules) mapped onto the kit scale. */
     --r-sm: 12px;
     --r-md: 14px;
     --r-lg: 18px;
     --r-xl: 20px;
+
+    /* Shadows — soft, cool-tinted (kit tokens/shadows.css). */
+    --shadow-card: 0 8px 24px rgba(20, 30, 30, 0.05);
+    --shadow-float: 0 6px 18px rgba(20, 30, 30, 0.12);
+    --shadow-fab: 0 10px 26px rgba(28, 93, 90, 0.40);
+    --shadow-modal: 0 30px 70px rgba(20, 30, 30, 0.30);
+    --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25);
 
     --tap: 44px;               /* minimum touch target */
     --content-max: 720px;
@@ -153,8 +187,8 @@ a:hover { text-decoration: underline; }
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px;
     min-height: var(--tap);
-    color: var(--muted);
-    font-size: 11px; font-weight: 600;
+    color: var(--muted-2);
+    font-size: 10px; font-weight: 700;
     text-decoration: none;
 }
 .tabbar__item:hover { text-decoration: none; }
@@ -230,10 +264,14 @@ a:hover { text-decoration: underline; }
 .card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: 16px;
+    border-radius: var(--r-18);
+    padding: 20px;                          /* kit "roomy"; --compact drops to 16 */
     margin-bottom: 14px;
+    box-shadow: var(--shadow-card);
 }
+.card--compact { padding: 16px; }
+.card--meal { border-radius: var(--r-20); }
+.card--summary { border-radius: var(--r-24); }
 .card--dim { opacity: 0.55; }               /* the goal card, when the goal is off */
 
 .stack > * + * { margin-top: 10px; }
@@ -324,40 +362,48 @@ input:focus, select:focus, textarea:focus {
 
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
 .switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.switch__slider { position: relative; width: 46px; height: 28px; flex: none; border-radius: 14px; background: var(--border); transition: background 0.18s; }
+.switch__slider { position: relative; width: 50px; height: 30px; flex: none; border-radius: 15px; background: var(--control-off); transition: background 0.18s; }
 .switch__slider::after {
-    content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
-    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.18s;
+    content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
+    border-radius: 50%; background: #fff; box-shadow: var(--shadow-knob); transition: transform 0.18s;
 }
 .switch input:checked + .switch__slider { background: var(--primary); }
-.switch input:checked + .switch__slider::after { transform: translateX(18px); }
+.switch input:checked + .switch__slider::after { transform: translateX(20px); }
 .switch input:focus-visible + .switch__slider { outline: 2px solid var(--primary); outline-offset: 2px; }
 .switch--row { display: flex; justify-content: space-between; width: 100%; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .switch--row:last-child { border-bottom: 0; }
 .switch__label { font-weight: 600; }
 
-.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin-top: 8px; }
-.segmented__btn { min-height: 40px; padding: 8px 20px; border: 0; background: var(--card); color: var(--text-muted); font: inherit; font-weight: 700; cursor: pointer; }
-.segmented__btn + .segmented__btn { border-left: 1px solid var(--border); }
-.segmented__btn.is-active { background: var(--primary-tint); color: var(--primary); }
+/* Pill segmented switch (kit): track on --bg, active pane white with a soft lift. */
+.segmented { display: inline-flex; gap: 4px; background: var(--surface); padding: 3px; border-radius: var(--r-10); }
+.segmented__btn { min-height: 34px; padding: 6px 16px; border: 0; border-radius: var(--r-8); background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+.segmented__btn.is-active { background: #fff; color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
 
 /* --- Buttons --------------------------------------------------------------- */
 
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: var(--tap); padding: 10px 18px;
-    border: 0; border-radius: var(--r-md);
+    min-height: var(--tap); padding: 11px 18px;
+    border: 1px solid var(--primary); border-radius: var(--r-12);
     background: var(--primary); color: #fff;
-    font: inherit; font-weight: 700; cursor: pointer; text-decoration: none;
+    font: inherit; font-weight: 700; line-height: 1; cursor: pointer; text-decoration: none;
+    transition: background 0.15s, color 0.15s;
 }
-.btn:hover { background: var(--primary-dark); text-decoration: none; }
+.btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); text-decoration: none; }
 .btn:active { background: var(--primary-dark); }
+.btn[disabled], .btn:disabled { background: #e3e7e8; border-color: #e3e7e8; color: #a9b3b3; cursor: not-allowed; }
 .btn--block { width: 100%; }
 .btn--sm { min-height: 38px; padding: 8px 14px; font-size: 13px; }
-.btn--ghost { background: transparent; color: var(--primary); border: 1px solid var(--border); }
+.btn--lg { padding: 14px 22px; font-size: 15px; }
+/* secondary = white + hairline; ghost = teal text; danger = white + red text */
+.btn--secondary { background: #fff; color: var(--text); border-color: var(--border); }
+.btn--secondary:hover { background: var(--surface); border-color: var(--border); }
+.btn--ghost { background: transparent; color: var(--primary); border-color: transparent; }
 .btn--ghost:hover { background: var(--surface-2); }
-.btn--quiet { background: transparent; color: var(--primary); min-height: 36px; padding: 6px 10px; font-weight: 600; }
-.btn--danger-quiet { background: transparent; color: var(--text-muted); min-height: 36px; padding: 6px 10px; font-weight: 600; }
+.btn--danger { background: #fff; color: var(--danger); border-color: var(--border); }
+.btn--danger:hover { background: var(--surface); border-color: var(--border); }
+.btn--quiet { background: transparent; color: var(--primary); border-color: transparent; min-height: 36px; padding: 6px 10px; font-weight: 600; }
+.btn--danger-quiet { background: transparent; color: var(--text-muted); border-color: transparent; min-height: 36px; padding: 6px 10px; font-weight: 600; }
 
 .badge {
     font-size: 12px; font-weight: 600; color: var(--text-muted);
@@ -470,3 +516,62 @@ input:focus, select:focus, textarea:focus {
 .dialog__close { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
 .macro__key { display: inline-flex; align-items: center; gap: 5px; }
 .macro__swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ==========================================================================
+   Kit components (design/prototype_v6/components) — presentational primitives
+   the screens compose from. Behaviour stays in the existing forms and JS; these
+   only carry the look. Matched by role to the kit's inline styles.
+   ========================================================================== */
+
+/* IconButton — compact square icon-only action (edit / delete on records). */
+.icon-btn {
+    width: 32px; height: 32px; flex: none; border-radius: var(--r-9);
+    background: #fff; border: 1px solid var(--border); color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn--danger { color: var(--danger); }
+.icon-btn--accent { color: var(--primary); }
+.icon-btn:hover { background: var(--surface); text-decoration: none; }
+
+/* SourceChip — the provenance trust signal. Verified = solid teal-tint pill with
+   a check; USDA = amber identity (not a warning); estimate = dashed grey ≈. */
+.source-chip {
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--r-pill);
+    color: var(--off-fg); background: var(--off-bg);
+}
+.source-chip--usda { color: var(--usda-fg); background: var(--usda-bg); }
+.source-chip--estimate { color: var(--muted); background: transparent; border: 1px dashed #c7cfcf; font-weight: 600; }
+
+/* MacroRow — a macro line in the day summary, tinted by category, optional bar. */
+.macro-row { background: var(--mint); border-radius: var(--r-14); padding: 12px 14px; }
+.macro-row--fat { background: var(--blue); }
+.macro-row--carb { background: var(--primary-tint); }
+.macro-row__head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.macro-row__value { color: var(--text); font-weight: 800; }
+.macro-row__track { height: 5px; background: #fff; border-radius: 3px; margin-top: 8px; }
+.macro-row__fill { height: 100%; background: var(--primary); border-radius: 3px; }
+
+/* RingSummary — the day's calorie total. Ring never changes colour (hard rule 4);
+   with no goal it is replaced by the plain eaten number. */
+.ring-summary { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ring-summary__ring { position: relative; width: 150px; height: 150px; margin-bottom: 8px; }
+.ring-summary__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-summary__num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ring-summary__cap { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.ring-summary__sub { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.ring-summary__plain { padding: 16px 0 6px; }
+.ring-summary__eaten { font-size: 46px; font-weight: 800; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* Input — labelled field (kit): 12px bold label, hairline field, muted hint. */
+.field__label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+.field__hint { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 6px; }
+
+/* EmptyState — soft teal icon tile, title, calm explanation, optional action. */
+.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 72px 6px; }
+.empty-state__tile { width: 84px; height: 84px; border-radius: var(--r-24); background: var(--primary-tint); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+.empty-state__tile svg { width: 40px; height: 40px; }
+.empty-state__title { font-size: 19px; font-weight: 800; }
+.empty-state__body { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 8px; max-width: 360px; line-height: 1.5; }
+.empty-state__action { margin-top: 22px; }
