@@ -28,7 +28,11 @@ class DailyTotals
         $hasEstimates = false;
 
         foreach ($entries as $entry) {
-            $kcal += $entry->kcal;
+            // Sum the calories the user actually sees — each entry rounded to a
+            // whole number — so the on-screen entries, the meal subtotals and
+            // this day total always reconcile. Summing the exact values first
+            // and rounding once makes the visible arithmetic fail to add up.
+            $kcal += round($entry->kcal);
             $proteinG += $entry->protein_g;
             $fatG += $entry->fat_g;
             $carbsG += $entry->carbs_g;

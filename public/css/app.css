@@ -257,11 +257,10 @@ a:hover { text-decoration: underline; }
 
 .prov { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
 .prov--verified { color: var(--primary); }
-.prov--estimate { color: var(--estimate); font-weight: 400; }
+/* An estimate is marked, not warned about: a light approximation glyph in a
+   neutral tone — no amber, no red. It reads as less certain, not as a problem. */
+.prov--estimate { color: var(--muted); font-weight: 400; }
 .prov__glyph { font-size: 13px; }
-
-/* An estimated row is lighter and carries a dashed edge — never reads verified. */
-.is-estimate { border-left: 3px dashed var(--estimate); padding-left: 11px; }
 
 /* --- Chips (history filters) ---------------------------------------------- */
 
@@ -389,9 +388,11 @@ input:focus, select:focus, textarea:focus {
 .entry__actions { display: flex; gap: 4px; align-items: center; }
 
 /* Empty state — the first thing a new user sees */
-.empty { text-align: center; padding: 40px 16px; }
+.empty { text-align: center; padding: 44px 16px; }
+.empty__icon { width: 40px; height: 40px; color: var(--muted); display: block; margin: 0 auto 14px; }
 .empty__title { font-weight: 800; font-size: 18px; margin-bottom: 6px; }
-.empty__body { color: var(--text-muted); max-width: 32ch; margin: 0 auto 18px; }
+.empty__body { color: var(--text-muted); max-width: 34ch; margin: 0 auto 18px; }
+.empty__actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* --- Charts (hand-rolled SVG) --------------------------------------------- */
 
