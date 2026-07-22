@@ -361,8 +361,37 @@ input:focus, select:focus, textarea:focus {
 .ring__value { fill: none; stroke: var(--primary); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
 .ring__center { text-align: center; }
 
-.summary { display: flex; align-items: center; gap: 20px; }
-.summary__figure { text-align: center; }
+.ring__num { font-weight: 800; font-size: 26px; fill: var(--text); font-variant-numeric: tabular-nums; }
+.ring__cap { font-size: 10px; fill: var(--muted); font-weight: 600; }
+
+.summary { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.summary__figure { min-width: 120px; }
+.summary__label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.summary__eaten { font-weight: 800; font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.summary__remaining { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+.summary__macros { display: flex; gap: 16px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.summary__macro { font-size: 13px; color: var(--text-muted); }
+.summary__macro b { color: var(--text); font-weight: 700; }
+
+/* Meal section on the Day screen */
+.meal { margin-top: 20px; }
+.meal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.meal__name { font-weight: 800; font-size: 16px; }
+.meal__sub { color: var(--muted); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.meal__add { margin-top: 8px; }
+
+.entry { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.entry:last-of-type { border-bottom: 0; }
+.entry__body { flex: 1; min-width: 0; }
+.entry__name { font-weight: 600; }
+.entry__meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.entry__kcal { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.entry__actions { display: flex; gap: 4px; align-items: center; }
+
+/* Empty state — the first thing a new user sees */
+.empty { text-align: center; padding: 40px 16px; }
+.empty__title { font-weight: 800; font-size: 18px; margin-bottom: 6px; }
+.empty__body { color: var(--text-muted); max-width: 32ch; margin: 0 auto 18px; }
 
 /* --- Charts (hand-rolled SVG) --------------------------------------------- */
 

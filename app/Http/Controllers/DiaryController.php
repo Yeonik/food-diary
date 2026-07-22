@@ -29,11 +29,19 @@ class DiaryController extends Controller
             ->get();
 
         $goal = Goal::query()->latest('id')->first();
+
+        // Totals are computed from every entry — a hidden meal still counts.
         $summary = $totals->summarise($entries, $goal);
 
-        // Group by meal in a stable order for display.
+        // Display only the meals the user keeps visible (all, when no goal row
+        // exists yet). Grouped in a stable order.
+        $visibleMeals = array_values(array_filter(
+            MealType::cases(),
+            fn (MealType $meal): bool => $goal?->showsMeal($meal) ?? true,
+        ));
+
         $byMeal = [];
-        foreach (MealType::cases() as $meal) {
+        foreach ($visibleMeals as $meal) {
             $byMeal[$meal->value] = $entries->where('meal', $meal)->values();
         }
 
@@ -41,9 +49,11 @@ class DiaryController extends Controller
             'date' => $date,
             'previous' => $date->subDay(),
             'next' => $date->addDay(),
-            'mealTypes' => MealType::cases(),
+            'goal' => $goal,
+            'visibleMeals' => $visibleMeals,
             'entriesByMeal' => $byMeal,
             'summary' => $summary,
+            'hasAnyEntry' => $entries->isNotEmpty(),
         ]);
     }
 

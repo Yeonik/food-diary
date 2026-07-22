@@ -41,7 +41,12 @@ class DiaryInterfaceTest extends TestCase
             'source' => NutrientSource::Estimated->value,
         ]);
 
-        $this->get(route('diary.index'))->assertOk()->assertSee('unverified');
+        // The new design marks an estimate with the approximation glyph and a
+        // day-level notice, rather than the literal word — but it stays visibly
+        // distinct from a verified value (hard rule 2).
+        $this->get(route('diary.index'))->assertOk()
+            ->assertSee('≈')
+            ->assertSee(__('day.has_estimates'));
     }
 
     public function test_an_entry_can_be_deleted(): void
