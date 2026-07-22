@@ -50,10 +50,15 @@
     --text: #182223;
     --text-muted: #5b6768;
     --muted: #9aa6a7;
-    --border: #d5dbdb;
-    --surface: #eef1f1;
+    --border: #e8ebec;         /* prototype v5 --line: softer than the old #d5dbdb */
+    --surface: #f5f6f7;        /* prototype v5 --bg: the screen behind the cards */
     --surface-2: #f5f6f7;
     --card: #ffffff;
+
+    /* Prototype v5 accents for tinted cards and chart fills — categorical, never
+       a verdict (hard rule 4): mint pairs with the primary, blue is a cool tile. */
+    --mint: #eef6f1;
+    --blue: #eaf1f8;
 
     /* Provenance: an estimate is visually lighter and never reads as verified. */
     --estimate: #8a6d3b;
