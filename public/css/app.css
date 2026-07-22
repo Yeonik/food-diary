@@ -213,17 +213,12 @@ a:hover { text-decoration: underline; }
     .sidebar__item:hover { text-decoration: none; background: var(--surface-2); }
     .sidebar__item svg { width: 20px; height: 20px; }
     .sidebar__item[aria-current='page'] { color: var(--primary); background: var(--primary-tint); }
-    .sidebar__actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
-    .sidebar__action {
-        display: flex; align-items: center; gap: 10px;
-        min-height: var(--tap); padding: 10px 12px;
-        border-radius: var(--r-md); font-weight: 600; text-decoration: none;
-    }
-    .sidebar__action--primary { background: var(--primary); color: #fff; }
-    .sidebar__action--ghost { border: 1px solid var(--border); color: var(--text); }
-    .sidebar__action:hover { text-decoration: none; }
     .app__content { padding: 24px 28px 48px; }
+    .quickadd { display: flex; }         /* desktop-only quick-add, revealed here */
 }
+
+/* Desktop quick-add bar (hidden on mobile, where the FAB does this) */
+.quickadd { display: none; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
 
 /* --- Cards & lists --------------------------------------------------------- */
 
@@ -331,6 +326,7 @@ input:focus, select:focus, textarea:focus {
 .btn:hover { background: var(--primary-dark); text-decoration: none; }
 .btn:active { background: var(--primary-dark); }
 .btn--block { width: 100%; }
+.btn--sm { min-height: 38px; padding: 8px 14px; font-size: 13px; }
 .btn--ghost { background: transparent; color: var(--primary); border: 1px solid var(--border); }
 .btn--ghost:hover { background: var(--surface-2); }
 .btn--quiet { background: transparent; color: var(--primary); min-height: 36px; padding: 6px 10px; font-weight: 600; }

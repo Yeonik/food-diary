@@ -33,17 +33,20 @@
                     <span>{{ $item['label'] }}</span>
                 </a>
             @endforeach
-            <div class="sidebar__actions">
-                <a class="sidebar__action sidebar__action--primary" href="{{ route('log.photo') }}">
-                    <x-icon name="camera" /> <span>{{ __('nav.add_photo') }}</span>
-                </a>
-                <a class="sidebar__action sidebar__action--ghost" href="{{ route('log.manual') }}">
-                    <x-icon name="manual" /> <span>{{ __('nav.add_manual') }}</span>
-                </a>
-            </div>
         </nav>
 
         <main class="app__content" id="content">
+            {{-- Desktop quick-add: two compact buttons, top-right. On mobile the
+                 round FAB below does this job, so this bar is desktop-only. --}}
+            <div class="quickadd">
+                <a class="btn btn--ghost btn--sm" href="{{ route('log.manual') }}">
+                    <x-icon name="plus" /> {{ __('nav.add_manual') }}
+                </a>
+                <a class="btn btn--sm" href="{{ route('log.photo') }}">
+                    <x-icon name="camera" /> {{ __('nav.add_photo') }}
+                </a>
+            </div>
+
             @if (session('status'))
                 <p class="notice">{{ session('status') }}</p>
             @endif
