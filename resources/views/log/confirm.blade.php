@@ -49,6 +49,14 @@
                         <label class="source">
                             <input type="radio" name="items[{{ $i }}][candidate]" value="{{ $c }}" data-confirm-source>
                             <span class="source__body">
+                                {{-- Open Food Facts thumbnail, pulled by link (never copied
+                                     here) and shown only on this screen, where a request for
+                                     this product is already in flight. Absent link or a load
+                                     failure just removes it — no broken-image placeholder. --}}
+                                @if (! empty($candidate['image_url']))
+                                    <img class="source__thumb" src="{{ $candidate['image_url'] }}" alt=""
+                                         loading="lazy" onerror="this.remove()">
+                                @endif
                                 <span class="prov {{ $candidate['verified'] ? 'prov--verified' : 'prov--estimate' }}">
                                     <span class="prov__glyph" aria-hidden="true">{{ $candidate['verified'] ? '✓' : '≈' }}</span>
                                     {{ __('source.'.$candidate['source']) }}

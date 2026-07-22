@@ -44,7 +44,7 @@ class ConfirmScreenTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function candidate(string $source, float $kcal, bool $verified): array
+    private function candidate(string $source, float $kcal, bool $verified, ?string $imageUrl = null): array
     {
         return [
             'label' => ucfirst($source).' match',
@@ -58,6 +58,7 @@ class ConfirmScreenTest extends TestCase
             'matched_via' => null,
             'food_item_id' => null,
             'external_id' => null,
+            'image_url' => $imageUrl,
         ];
     }
 
@@ -124,6 +125,23 @@ class ConfirmScreenTest extends TestCase
         $entry = MealEntry::query()->firstOrFail();
         $this->assertSame(NutrientSource::Estimated, $entry->source);
         $this->assertFalse($entry->isVerified());
+    }
+
+    public function test_an_open_food_facts_candidate_shows_its_thumbnail_and_one_without_renders_cleanly(): void
+    {
+        // With an image: the thumbnail is pulled by link.
+        $this->withSession($this->pending([
+            $this->candidate('open_food_facts', 120, true, 'https://images.openfoodfacts.org/z.small.jpg'),
+        ]))->get(route('log.confirm'))
+            ->assertOk()
+            ->assertSee('https://images.openfoodfacts.org/z.small.jpg', false);
+
+        // Without one: no image element, and no error.
+        $this->withSession($this->pending([
+            $this->candidate('open_food_facts', 120, true),
+        ]))->get(route('log.confirm'))
+            ->assertOk()
+            ->assertDontSee('source__thumb');
     }
 
     public function test_hand_entered_values_are_logged_verified_at_zero_matches(): void

@@ -445,6 +445,7 @@ input:focus, select:focus, textarea:focus {
 .source input[type='radio'] { width: auto; min-height: 0; margin-top: 3px; flex: none; }
 .source__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .source__name { font-weight: 600; }
+.source__thumb { width: 44px; height: 44px; border-radius: var(--r-sm); object-fit: cover; align-self: flex-start; background: var(--surface); }
 .source:has(input:checked) { border-color: var(--primary); background: var(--primary-tint); }
 .source--skip { color: var(--text-muted); }
 

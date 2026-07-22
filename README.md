@@ -67,6 +67,18 @@ angled, so the path to "just type the number" is never hidden.
 Because it is a real browser API, `BarcodeDetector` is **not exercised in CI**;
 verify it by hand as with the other integrations (see below).
 
+### Open Food Facts thumbnails
+
+On the confirm screen, an Open Food Facts candidate shows the product thumbnail —
+pulled **by link** from Open Food Facts, never copied to this server, and hidden
+if the link is absent or fails. It appears **only** there: a request to Open Food
+Facts for that exact product is already in flight at that moment, so the picture
+leaks nothing new. It is **deliberately absent from the library** — a library
+view rendering thumbnails would hotlink `openfoodfacts.org` on every visit, a
+repeated third-party request from a page that knows what you eat. That is the
+same leak the self-hosted font avoids, and the reason the library stays
+image-free.
+
 ## Recipes
 
 Borscht, plov and manty are in no database — every household cooks them
