@@ -47,7 +47,8 @@ class BarcodeFlowTest extends TestCase
         $this->get(route('log.barcode.confirm'))
             ->assertOk()
             ->assertSee('Kefir 1%')
-            ->assertSee(__('source.open_food_facts'));
+            ->assertSee(__('source.open_food_facts'))
+            ->assertSee('https://images.openfoodfacts.org/k.small.jpg', false);
 
         // Step two: log 250 g → 40 kcal/100 g × 2.5 = 100 kcal, verified OFF.
         $this->post(route('log.barcode.confirm.store'), ['meal' => 'breakfast', 'grams' => 250])

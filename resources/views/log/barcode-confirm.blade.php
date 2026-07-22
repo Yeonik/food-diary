@@ -8,12 +8,16 @@
 
     @php $c = $product['candidate']; @endphp
 
-    {{-- One product, resolved from the code. No thumbnail here by design: the
-         library and its neighbours stay free of third-party image requests; the
-         picture is only shown on the photo confirm screen. --}}
     <form method="post" action="{{ route('log.barcode.confirm.store') }}" class="card confirm-dish">
         @csrf
         <div class="confirm-dish__head">
+            {{-- Open Food Facts thumbnail, pulled by link and removed on failure or
+                 when absent. This is the same moment as the code lookup — a request
+                 for this product just went out — so the picture leaks nothing new. --}}
+            @if (! empty($c['image_url']))
+                <img class="source__thumb" src="{{ $c['image_url'] }}" alt=""
+                     loading="lazy" onerror="this.remove()">
+            @endif
             <span class="confirm-dish__name">{{ $product['name'] }}</span>
         </div>
 
