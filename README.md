@@ -154,6 +154,14 @@ Sign-in attempts are throttled to five a minute per email-and-IP pair, and a
 wrong password and an unknown address are answered identically — whether an
 address has an account here is not something the screen tells a stranger.
 
+Passwords need eight characters and nothing else: no composition rule, because
+demanding a symbol and a digit produces `Password1!` and nothing safer. A
+running instance does check the password against public breach corpora, by
+k-anonymity — only the first five characters of its SHA-1 are ever sent. **The
+test environment is the one place that check is off**, because CI here makes no
+network calls at all. That costs nothing at runtime: the rule fails open, so a
+breach-list outage never stops anyone setting a password.
+
 ## No scraping
 
 Only official APIs with an explicit licence are used: USDA (public domain) and

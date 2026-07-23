@@ -12,11 +12,17 @@ use Illuminate\Validation\Rules\Password;
  * composition rules. Forcing a symbol and a digit produces "Password1!" and
  * nothing safer.
  *
- * Deliberately NOT `->uncompromised()`. That rule is a good one, but it asks
- * haveibeenpwned.com over the network on every validation — including in the
- * test suite, and this project's first rule for CI is that it makes no network
- * calls and needs no key. A check that a stranger's outage can fail is not a
- * check this suite can own.
+ * A running instance also refuses passwords that appear in public breach
+ * corpora, which is a far better filter than any composition rule. That check
+ * asks api.pwnedpasswords.com over the network — by k-anonymity, so only the
+ * first five characters of the hash are ever sent, never the password — and the
+ * test environment is the one place it is left off, because CI here makes no
+ * network calls at all and `Http::preventStrayRequests()` would refuse it.
+ *
+ * Leaving it off in tests costs nothing at runtime: the rule already fails open.
+ * If the API cannot be reached, Laravel reports the exception and treats the
+ * password as unseen, so a breach-list outage never locks anybody out of setting
+ * a password.
  */
 trait PasswordRules
 {
@@ -25,6 +31,12 @@ trait PasswordRules
      */
     protected function passwordRules(): array
     {
-        return ['required', 'string', Password::min(8), 'confirmed'];
+        $password = Password::min(8);
+
+        if (! app()->environment('testing')) {
+            $password = $password->uncompromised();
+        }
+
+        return ['required', 'string', $password, 'confirmed'];
     }
 }
