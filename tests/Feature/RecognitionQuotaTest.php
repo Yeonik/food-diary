@@ -7,10 +7,12 @@ namespace Tests\Feature;
 use App\Models\Recognition;
 use App\Models\User;
 use App\Nutrition\Contracts\FoodRecogniser;
+use App\Nutrition\Exceptions\DailyLimitReachedException;
 use App\Nutrition\Exceptions\RecognitionFailedException;
 use App\Nutrition\PreparedPhoto;
 use App\Nutrition\Recognisers\MeteredRecogniser;
 use App\Nutrition\RecognitionQuota;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -216,6 +218,53 @@ class RecognitionQuotaTest extends TestCase
         // number lives.
         $this->actingAs($them);
         $this->get(route('invites.index'))->assertForbidden();
+    }
+
+    public function test_two_attempts_at_the_last_slot_produce_one_recognition_and_not_two(): void
+    {
+        config(['nutrition.recognition.daily_limit' => 1]);
+        $this->signIn();
+        $quota = app(RecognitionQuota::class);
+
+        // Both attempts start from a free allowance — the state two uploads
+        // submitted together would both see.
+        $this->assertSame(1, $quota->remainingToday());
+        $this->assertSame(1, $quota->remainingToday());
+
+        $quota->claimOne();
+
+        try {
+            $quota->claimOne();
+            $this->fail('The last slot was handed out twice.');
+        } catch (DailyLimitReachedException) {
+            // Expected.
+        }
+
+        $this->assertSame(1, DB::table('recognitions')->count());
+    }
+
+    public function test_claiming_is_one_conditional_write_and_not_a_count_then_a_write(): void
+    {
+        // What makes the test above hold under a real interleaving, which a
+        // single-process suite cannot stage: the count is inside the insert, so
+        // the second writer's row is simply not written. Asking first and
+        // writing afterwards would pass the test above and lose the race.
+        $this->signIn();
+
+        $statements = [];
+        DB::listen(function (QueryExecuted $query) use (&$statements): void {
+            if (str_contains($query->sql, 'recognitions')) {
+                $statements[] = $query->sql;
+            }
+        });
+
+        app(RecognitionQuota::class)->claimOne();
+
+        $this->assertCount(1, $statements,
+            "Claiming touched `recognitions` more than once:\n".implode("\n", $statements));
+        $this->assertStringStartsWith('insert', $statements[0]);
+        $this->assertStringContainsString('count(*)', $statements[0],
+            'The insert does not count what has been used, so it cannot refuse the one over the limit.');
     }
 
     public function test_a_limit_of_zero_stops_recognition_rather_than_removing_the_limit(): void

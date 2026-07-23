@@ -7,6 +7,7 @@ namespace App\Nutrition;
 use App\Models\Recognition;
 use App\Nutrition\Exceptions\DailyLimitReachedException;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -52,24 +53,41 @@ final class RecognitionQuota
     /**
      * Take one from today's allowance, or refuse.
      *
-     * The check and the write are two statements, which is a race — two uploads
-     * submitted together could both read the same count and both proceed. It is
-     * left as one, knowingly: the worst case is a single call over the limit,
-     * which the next second corrects. That is a different kind of thing from an
-     * invitation, where two winners would mean an account that should not exist
-     * and the write is conditional for exactly that reason. This is a rate, not
-     * a permission.
+     * One statement. The row is written only if the count the insert takes for
+     * itself is under the limit, and the verdict is whether a row appeared —
+     * the same shape the invitation code uses, and for the same reason. Asking
+     * how many have been used and then writing would leave a gap: two uploads
+     * submitted together both read the same count, both find room, and both
+     * proceed. SQLite serialises writers, so with the condition inside the
+     * insert the second one simply writes nothing.
+     *
+     * The owner is passed rather than left to the model's `creating` hook,
+     * because this does not go through the model. A null there would be caught
+     * by the column, which is NOT NULL — nothing gets claimed on nobody's
+     * behalf.
      *
      * @throws DailyLimitReachedException
      */
     public function claimOne(): void
     {
-        if ($this->usedToday() >= $this->limit()) {
+        $now = CarbonImmutable::now()->toDateTimeString();
+
+        // `cast(? as integer)` is not decoration. SQLite orders integers before
+        // text, so a limit that arrived as a string would make `count(*) < ?`
+        // true for every count there will ever be — the guard would be gone and
+        // nothing would look wrong. The driver types it correctly today; the
+        // cast means it does not have to.
+        $claimed = DB::affectingStatement(
+            'insert into recognitions (user_id, created_at, updated_at)
+             select ?, ?, ?
+             where (select count(*) from recognitions where user_id = ? and created_at >= ?)
+                   < cast(? as integer)',
+            [Auth::id(), $now, $now, Auth::id(), $this->midnight()->toDateTimeString(), $this->limit()],
+        );
+
+        if ($claimed !== 1) {
             throw new DailyLimitReachedException($this->limit());
         }
-
-        // The owner comes from the signed-in person, by the model's own rule.
-        Recognition::query()->create([]);
     }
 
     /**
