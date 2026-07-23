@@ -4,6 +4,10 @@ A self-hosted food diary. Photograph a meal, a vision model names the dishes and
 estimates portions, you confirm, and the numbers come from nutrition databases or
 your own corrected entries — **never invented by the model.**
 
+One instance holds several diaries. Accounts are by invitation from the owner,
+and no request crosses the boundary between two of them — proven by tests rather
+than observed by care.
+
 ## Why it exists
 
 Calorie estimates from a photo are unreliable in a specific way: a model will
@@ -21,8 +25,12 @@ enforced in the resolver and in the log service, not just promised here.
 ## An honest privacy note
 
 Unlike a local tool, this app **sends your meal photographs to Google's Gemini
-API**. That is unavoidable for the recognition step and is stated plainly here
-and before the first upload. Two mitigations are implemented, not just promised:
+API**. That is unavoidable for the recognition step, and it is said in three
+places: here, on the registration form *before* an account exists, and again on
+the screen that does the uploading. Saying it only at the upload would be telling
+somebody after they have joined and started keeping a diary here, which is late
+enough not to be a choice (`tests/Feature/RecognitionNoticeTest.php`). Two
+mitigations are implemented, not just promised:
 
 - **All photo metadata is stripped before the image leaves the machine.** The
   photo is re-encoded through GD, which drops the entire EXIF block — GPS
@@ -136,12 +144,121 @@ is no public page: every route in `routes/web.php` sits inside one `auth` group,
 so a screen added later is protected because of where it lives rather than
 because somebody remembered. `/up`, the health check, is the single exception.
 
+### Getting in is by invitation
+
+There is no open registration. The owner creates an invitation, the screen shows
+the code **once**, and that is the only moment it exists in readable form: the
+table stores a SHA-256 of it and nothing else. A code that is lost is revoked and
+replaced, which costs a click and keeps the database free of live keys to
+accounts. SHA-256 rather than bcrypt on purpose — bcrypt salts every hash, so a
+code could never be looked up by its digest; a password needs that protection
+because it is short and human, a code here is 32 characters of cryptographic
+randomness.
+
+A code is worth exactly one account, and that is the database's answer rather
+than the code's. Spending it is a single conditional insert — mark it used
+*where* it is unused, unrevoked and unexpired — and the verdict is how many rows
+changed. Reading the invitation and then writing to it would leave a gap in which
+two registrations both find it free and one code makes two accounts. Unknown,
+expired, revoked and already used all give the same refusal, so a stranger
+feeding in guesses is never told which one named a real invitation.
+
+Revoking marks the row rather than deleting it: the owner keeps the record of who
+was invited, and a deletion would make a mistaken invitation indistinguishable
+from one that was never sent. An invitation that has already been used cannot be
+revoked — there is an account behind it, and the way to withdraw that is to
+remove the account.
+
+### Isolation is the shape of the tables, not the care of the queries
+
+Every domain record belongs to one account, and there are two mechanisms, doing
+different work.
+
+The first is a global scope on the model, so every read is filtered whether or
+not the query remembered to say so, and route model binding resolves `{entry}`
+and `{item}` through it. One consequence is worth stating: another person's id
+and an id that never existed are **indistinguishable** — both simply do not
+resolve, both answer 404, and the two responses are the same bytes. A 403 would
+be a refusal that confirms the record is there, which is an existence oracle
+somebody can walk with a loop. With nobody signed in a read returns **nothing**
+rather than everything, so a console context that omits to say whose data it
+wants gets missing data — loud — instead of all of it. Reading on somebody's
+behalf outside a request means naming them.
+
+The second is the schema. Ids that arrive in the body of a request — a merge
+target, a recipe line, a diary entry's link back to the library — never pass
+through route model binding, so the scope never sees them. They are constrained
+in the validation rules, and *underneath that* the keys themselves name the
+owner: `recipe_ingredients`, `meal_entries` and `food_item_aliases` all reference
+`food_items(id, user_id)` rather than `food_items(id)`. A row pointing across the
+boundary is refused by the table, by any route, query or mistake. The same
+composite key settles a second thing for free — a recipe line cannot claim an
+owner different from its recipe's, because one `user_id` has to satisfy both
+keys at once.
+
+`tests/Feature/CrossUserIsolationTest.php` walks every route that takes an id
+while signed in as somebody else and asserts three things each time: the refusal,
+that it is byte-identical to the refusal for an id that never existed, and — the
+one that matters most — that the whole of every domain table is unchanged
+afterwards. A test that only checks the status code passes happily while the
+write it was meant to prevent has already happened and the refusal came after.
+
+The library staying personal is the point rather than a side effect: it outranks
+USDA and Open Food Facts because *you* verified it, and a stranger's entry
+arriving in that first tier would destroy exactly the property that makes the
+tier worth having. That covers the names too — an alias is matched against, so
+one attached across the boundary would be a stranger's phrasing steering
+somebody else's recognition.
+
+### A daily recognition limit
+
+There is one Gemini key on the installation, with one bill and one rate limit
+behind it, and every account spends from it. So each account gets a number of
+recognitions a day (`RECOGNITION_DAILY_LIMIT`, 25 by default; `0` is an off
+switch, not "unlimited").
+
+**A recognition counts when it is asked for, not when it succeeds.** That is the
+less generous of the two choices and it is deliberate: a call that comes back
+empty, malformed or refused costs the key exactly what a good one costs, so
+charging only for successes would leave the key unprotected in precisely the case
+where something is going wrong and requests are being retried.
+
+The refusal says which limit was reached, that it lifts tomorrow, and that a meal
+can still be logged by hand or by barcode. It is a different message from
+"the recogniser could not be reached", and a different exception type, so the two
+cannot be given the same words by accident — being told a service is down when
+your own allowance is spent sends you to refresh, retry and check your
+connection, none of which can help. The owner sees one number: everybody's
+recognitions today. Not per person — paying for the key is a different thing from
+being able to watch what anybody eats.
+
+### Leaving
+
+An account can be deleted from the settings screen, and it takes everything with
+it: entries, library, recipes, aliases, weight, goals, quota rows, and whatever
+was half-finished on the confirm screen, the photo on disk included. The password
+is asked for because this cannot be undone, not because leaving is discouraged —
+there is no warning about losing progress, no offer to deactivate instead, and
+nothing kept back for later.
+
+The order the tables are emptied in is written out in `app/Support/AccountErasure.php`
+rather than left to the cascades, and the comment there says why: a recipe line
+holds its ingredient with `RESTRICT`, and an entry's link to a library item takes
+no delete action at all, so a food item that is still referred to cannot be
+removed. Getting the order wrong does not half-work — it fails outright.
+
+The invitation somebody joined with survives, with its `used_by` cleared and
+`used_at` intact: the owner keeps the record that somebody was invited, and the
+code stays spent. The owner's own account is the one that cannot be deleted from
+here — there is no way to appoint another owner inside the application, so it
+would leave an installation nobody can invite anybody to.
+
 What is deliberately **off**, and why:
 
 - **Password reset by email.** This instance has no deliverable mail configured,
   and a reset screen that promises a link which lands in a log file is worse than
-  no screen at all. Until mail exists, a forgotten password is reset from a shell
-  on the machine:
+  no screen at all. Until mail exists, **a forgotten password goes through the
+  owner**, who runs one command on the machine:
 
   ```bash
   php artisan diary:set-password someone@example.com
@@ -149,25 +266,15 @@ What is deliberately **off**, and why:
 
   It asks for the password rather than taking it as an argument, so it stays out
   of the shell history and the process list. The reset route does not exist at
-  all, so there is nothing to click and be disappointed by.
+  all, so there is nothing to click and be disappointed by. That is the trade a
+  self-hosted instance with no mail server makes, and it is stated here rather
+  than discovered by somebody locked out.
 - **Two-factor and passkeys.** Not offered. `laravel/passkeys` is installed
   anyway — Fortify 1.37 requires it — so it is dormant by decision rather than by
   accident: with the features off Fortify registers none of their routes, and
   because Fortify's migrations are never published, neither the passkey table nor
   the two-factor columns exist. `tests/Feature/AuthenticationTest.php` asserts
   both, so "off" is a fact about the routing table and the schema, not a claim.
-
-Every domain record belongs to one account, and the constraint is on the model,
-not on the query: a global scope filters every read, so a controller cannot leak
-by forgetting a `where`. With nobody signed in, a read returns **nothing** rather
-than everything — a console context that omits to say whose data it wants gets
-missing data, which is loud, instead of all of it, which is not. Reading on
-somebody's behalf outside a request means naming them.
-
-The library staying personal is the point rather than a side effect: it outranks
-USDA and Open Food Facts because *you* verified it, and a stranger's entry
-arriving in that first tier would destroy exactly the property that makes the
-tier worth having.
 
 Sign-in attempts are throttled to five a minute per email-and-IP pair, and a
 wrong password and an unknown address are answered identically — whether an
@@ -274,14 +381,20 @@ app/Nutrition/
   Contracts/FoodRecogniser.php        recognise(PreparedPhoto): RecognisedItem[]
   Recognisers/GeminiRecogniser.php    the only real recogniser
   Recognisers/FakeRecogniser.php      what CI runs against
+  Recognisers/MeteredRecogniser.php   the daily limit, in front of either
   Contracts/NutritionSource.php       search(string): NutrientMatch[]
   Sources/PersonalLibrarySource.php   tier 1
   Sources/UsdaSource.php              tier 2
   Sources/OpenFoodFactsSource.php     tier 2
   FoodResolver.php                    walks the ladder, USDA + OFF in parallel
   RecipeCalculator.php                composes a profile from ingredients
+  RecognitionQuota.php                a day's allowance, per account
   PhotoPreparer.php                   EXIF strip, resize, content validation
-app/Models/  FoodItem, RecipeIngredient, MealEntry, WeightEntry, Goal
+app/Models/Concerns/BelongsToUser.php the owner scope, on every domain model
+app/Support/OwnerAccount.php          the owner, from configuration
+app/Support/AccountErasure.php        leaving, in the order the keys allow
+app/Models/  User, Invite, Recognition, FoodItem, RecipeIngredient, MealEntry,
+             FoodItemAlias, WeightEntry, Goal
 ```
 
 ## Running it
@@ -385,6 +498,7 @@ off the machine as well.
 | `QUEUE_CONNECTION` | `database` |
 | `GEMINI_API_KEY` | your Gemini key (photo recognition) |
 | `GEMINI_MODEL` | optional, e.g. `gemini-3.5-flash`; a default applies if unset |
+| `RECOGNITION_DAILY_LIMIT` | optional, `25` by default; recognitions one account may ask for per day |
 | `USDA_API_KEY` | optional; without it USDA matches are skipped |
 | `OFF_USER_AGENT` | optional, e.g. `food-diary/1.0 (self-hosted)` |
 
