@@ -63,6 +63,71 @@ class BarcodeFlowTest extends TestCase
         $this->assertSame('4600000000000', FoodItem::query()->firstOrFail()->external_id);
     }
 
+    /**
+     * The confirm form carries a portion and a meal. The nutrient values come
+     * from the product held in the session, so numbers posted alongside them are
+     * ignored rather than believed.
+     */
+    public function test_the_form_cannot_supply_the_nutrient_values(): void
+    {
+        Http::fake([
+            'world.openfoodfacts.org/api/v2/product/*' => Http::response([
+                'status' => 1,
+                'product' => [
+                    'code' => '4600000000000',
+                    'product_name' => 'Kefir 1%',
+                    'nutriments' => [
+                        'energy-kcal_100g' => 40,
+                        'proteins_100g' => 3,
+                        'fat_100g' => 1,
+                        'carbohydrates_100g' => 4,
+                    ],
+                ],
+            ]),
+        ]);
+
+        $this->post(route('log.barcode.lookup'), ['code' => '4600000000000']);
+
+        $this->post(route('log.barcode.confirm.store'), [
+            'meal' => 'breakfast',
+            'grams' => 100,
+            // All of this is noise: it is not what the product says.
+            'kcal' => 9999,
+            'protein' => 99,
+            'fat' => 99,
+            'carbs' => 99,
+            'source' => 'personal_library',
+            'name' => 'Something else',
+        ])->assertRedirect();
+
+        $entry = MealEntry::query()->firstOrFail();
+        $this->assertSame('Kefir 1%', $entry->name);
+        $this->assertSame(40.0, $entry->kcal);
+        $this->assertSame(3.0, $entry->protein_g);
+        $this->assertSame(NutrientSource::OpenFoodFacts, $entry->source);
+    }
+
+    /**
+     * Where the browser cannot scan, the screen says that — a different message
+     * from a frame that would not read, and both have to survive a rewrite.
+     */
+    public function test_the_screen_offers_capture_and_the_typed_code_with_separate_explanations(): void
+    {
+        $html = (string) $this->get(route('log.barcode'))->assertOk()->getContent();
+
+        // The capture panel, the number field, and the two distinct messages.
+        $this->assertStringContainsString('data-barcode-scan', $html);
+        $this->assertStringContainsString('data-barcode-code', $html);
+        $this->assertStringContainsString(__('barcode.unsupported'), $html);
+        $this->assertStringContainsString(__('barcode.unread'), $html);
+        $this->assertNotSame(__('barcode.unsupported'), __('barcode.unread'));
+
+        // The panel is hidden until scripting confirms the API exists; the number
+        // field never is, because it is the whole feature without it.
+        $this->assertMatchesRegularExpression('/<div data-barcode-scan hidden>/', $html);
+        $this->assertDoesNotMatchRegularExpression('/<input[^>]*data-barcode-code[^>]*hidden/', $html);
+    }
+
     public function test_an_unknown_code_says_so_and_logs_nothing(): void
     {
         Http::fake([

@@ -466,11 +466,18 @@ select.field { cursor: pointer; }
 
 /* --- Scan ------------------------------------------------------------------- */
 
+/* The capture panel is a label for a file input — a big target that opens the
+   camera. It is not a live viewfinder, so it carries no scanning line: there is
+   nothing being scanned until a frame comes back. */
 .scan { max-width: 520px; margin: 0 auto; }
-.scan-view { position: relative; background: #0f1a1a; border-radius: 20px; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.scan-view { position: relative; background: #0f1a1a; border-radius: 20px; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+.scan-view:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
 .scan-frame { position: absolute; width: 70%; height: 130px; }
-.scan-frame span { position: absolute; width: 26px; height: 26px; }
-.scan-line { position: absolute; width: 70%; height: 2px; background: #8fd0c4; box-shadow: 0 0 12px #8fd0c4; }
+.scan-frame span { position: absolute; width: 26px; height: 26px; border: 0 solid #fff; }
+.scan-frame span:nth-child(1) { left: 0; top: 0; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+.scan-frame span:nth-child(2) { right: 0; top: 0; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+.scan-frame span:nth-child(3) { left: 0; bottom: 0; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+.scan-frame span:nth-child(4) { right: 0; bottom: 0; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
 .scan-hint { font-size: 13px; color: var(--text-muted); font-weight: 600; text-align: center; margin: 16px 0 14px; }
 
 /* --- Product / recipe forms -------------------------------------------------- */
