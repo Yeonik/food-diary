@@ -24,16 +24,19 @@ document.addEventListener('click', function (event) {
     input.value = String(Math.min(max, Math.max(min, current + delta)));
 });
 
-// The goal switch dims its card live, matching the saved state's rendering.
+// The goal switch dims its card live, matching what the server renders for the
+// saved state. The switch and the card it dims are separate cards, so the toggle
+// names its target by id — the same shape as the stepper buttons above. The
+// class is the one the server writes, so the two can never disagree.
 document.addEventListener('change', function (event) {
     const toggle = event.target.closest('[data-dim-toggle]');
     if (!toggle) {
         return;
     }
 
-    const card = toggle.closest('[data-dim]');
+    const card = document.getElementById(toggle.dataset.dimToggle);
     if (card) {
-        card.classList.toggle('card--dim', !toggle.checked);
+        card.classList.toggle('dim', !toggle.checked);
     }
 });
 

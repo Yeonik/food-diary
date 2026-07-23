@@ -14,12 +14,15 @@
                     <div class="t">{{ __('settings.goal') }}</div>
                     <div class="s">{{ __('settings.goal_hint') }}</div>
                 </div>
-                <x-switch name="goal_enabled" :checked="$enabled" :label="__('settings.goal')" data-dim-toggle />
+                <x-switch name="goal_enabled" :checked="$enabled" :label="__('settings.goal')" data-dim-toggle="goal-card" />
             </x-card>
 
-            {{-- The target card, visibly quieter when no goal is set — the diary
-                 works either way, and never suggests lowering a target. --}}
-            <x-card :dim="! $enabled" data-dim style="margin-bottom:16px">
+            {{-- The target card, visibly quieter when no goal is set: the diary
+                 works either way, and saying so is the point of the dimming, not
+                 decoration. Its fields stay editable, so turning the goal back on
+                 finds the numbers where they were left. The app never suggests
+                 lowering a target — these are fields, and nothing else. --}}
+            <x-card id="goal-card" :dim="! $enabled" style="margin-bottom:16px">
                 <div class="flabel" style="margin-bottom:10px">{{ __('settings.daily_kcal') }}</div>
                 <x-stepper name="daily_kcal" :value="old('daily_kcal', $goal?->daily_kcal ?? 2000)"
                            step="50" min="0" max="6000" :unit="__('nutrition.kcal')" />
