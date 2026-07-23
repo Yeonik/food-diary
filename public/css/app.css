@@ -495,7 +495,14 @@ select.field { cursor: pointer; }
 .add-dashed { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 16px; border-radius: 10px; border: 1px dashed #c7cfcf; background: var(--card); color: var(--primary); font-weight: 700; font-size: 13px; cursor: pointer; }
 .total-bar { display: flex; align-items: center; justify-content: space-between; background: var(--primary-tint); border-radius: 12px; padding: 14px 16px; flex-wrap: wrap; gap: 6px; }
 .total-bar .l { font-size: 13px; color: #3d4a4b; font-weight: 600; }
-.total-bar .v { font-size: 16px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+/* Same contrast as .mrow on the day summary: the number is ink at 800, the unit
+   beside it is muted and small. The build set the whole line in teal at one
+   size, which left nothing for the eye to land on. */
+.total-bar .v { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 20px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.total-bar .v b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.total-bar .tb-kcal b { font-size: 17px; }
+.total-bar .tb-macros { display: flex; gap: 14px; }
+.total-bar .tb-macros b { font-size: 14px; }
 
 /* --- Single-purpose gate ----------------------------------------------------
    The unlock screen. Sign-in / registration / reset are v0.3.0 and not built. */

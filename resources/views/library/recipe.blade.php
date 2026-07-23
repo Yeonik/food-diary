@@ -55,11 +55,16 @@
                      an ingredient later cannot rewrite an entry already logged. --}}
                 <div class="total-bar">
                     <span class="l">{{ __('library.recipe_total') }}</span>
+                    {{-- Numbers dark, their units quiet, and space rather than
+                         punctuation between the calories and the macros — the same
+                         reading order as the day summary's macro rows. --}}
                     <span class="v">
-                        {{ \App\Support\Format::kcal($total->kcal) }} {{ __('nutrition.kcal') }} ·
-                        {{ __('nutrition.p') }} {{ \App\Support\Format::macro($total->proteinG) }} /
-                        {{ __('nutrition.f') }} {{ \App\Support\Format::macro($total->fatG) }} /
-                        {{ __('nutrition.c') }} {{ \App\Support\Format::macro($total->carbsG) }}
+                        <span class="tb-kcal"><b>{{ \App\Support\Format::kcal($total->kcal) }}</b> {{ __('nutrition.kcal') }}</span>
+                        <span class="tb-macros">
+                            <span>{{ __('nutrition.p') }} <b>{{ \App\Support\Format::macro($total->proteinG) }}</b></span>
+                            <span>{{ __('nutrition.f') }} <b>{{ \App\Support\Format::macro($total->fatG) }}</b></span>
+                            <span>{{ __('nutrition.c') }} <b>{{ \App\Support\Format::macro($total->carbsG) }}</b></span>
+                        </span>
                     </span>
                 </div>
             @endif

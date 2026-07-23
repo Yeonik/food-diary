@@ -78,7 +78,9 @@ class LibraryFormsTest extends TestCase
             ->assertOk()
             ->assertSee(__('library.recipe_total'))
             ->assertSee('Rice')
-            ->assertSee(Format::kcal($expected->kcal).' '.__('nutrition.kcal'), false);
+            // The figure is the emphasised half of the pair, its unit the quiet one.
+            ->assertSee('<b>'.Format::kcal($expected->kcal).'</b> '.__('nutrition.kcal'), false)
+            ->assertSee('<b>'.Format::macro($expected->proteinG).'</b>', false);
     }
 
     public function test_the_add_ingredient_button_prints_its_glyph_once(): void
