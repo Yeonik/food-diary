@@ -275,14 +275,46 @@ start, so an empty volume is fine.
 to it. Do **not** set `PORT` yourself.
 
 **Migrations run automatically** on each deploy (`php artisan migrate --force`
-in the entrypoint). This is deliberate: a single instance on a volume has no
-migration race, the project's migrations are additive and nullable, and a failed
-migration fails the deploy cleanly (the container exits, Railway keeps the
-previous version) rather than serving a half-migrated schema. Escape hatch for a
-risky migration: open a Railway shell, copy
-`/app/storage/app/food-diary.sqlite` aside first; if you want to gate the
-migration by hand, run it there with `php artisan migrate` before the code that
-needs it.
+in the entrypoint). A single instance on a volume has no migration race, and a
+failed migration fails the deploy — the container exits and Railway keeps the
+previous version serving.
+
+What it does **not** do is leave the database as it was. Laravel wraps schema
+changes in a transaction only for the grammars that declare support for it —
+Postgres and SQL Server — and SQLite is not one of them. On top of that, SQLite
+cannot alter a column or an index in place: adding a constraint rebuilds the
+whole table (create a temporary copy, move the rows, drop, rename). A migration
+that fails halfway through a set therefore leaves a partly changed schema, and
+`php artisan migrate:rollback` is not an honest undo for it.
+
+So the entrypoint **backs the database up before migrating it**, and for a file
+database that copy is the real rollback:
+
+- Only when migrations are actually pending, so a plain restart costs nothing.
+- Written to `backups/` **beside the database file** — derived from
+  `dirname "$DB_DATABASE"`, so it always lands on the same volume the database
+  is on, whatever that volume is mounted as. It is under `storage/`, which is
+  not the document root, so it is not reachable over HTTP.
+- **One per day, first one wins.** If a migration fails and the platform
+  restarts the container, the retry must not copy the half-migrated database
+  over the good copy taken minutes earlier.
+- Copied to a temporary name and renamed into place, so an interrupted copy
+  cannot later be mistaken for a complete backup.
+- Seven kept, oldest pruned.
+
+**To restore**, open a Railway shell and put the file back:
+
+```bash
+ls -l /app/storage/app/backups
+cp /app/storage/app/backups/food-diary.sqlite.YYYY-MM-DD /app/storage/app/food-diary.sqlite
+```
+
+then redeploy the previous release. Do this *before* redeploying, not after —
+the entrypoint migrates on start.
+
+A backup on the same volume protects against a bad migration, not against
+losing the volume. Before a migration that changes existing data, take a copy
+off the machine as well.
 
 **Variables to set** in the service (Settings → Variables):
 
