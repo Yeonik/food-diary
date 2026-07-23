@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Goal;
 use App\Models\MealEntry;
+use App\Models\WeightEntry;
 use App\Nutrition\MealType;
 use App\Nutrition\NutrientSource;
 use Carbon\CarbonImmutable;
@@ -86,6 +87,47 @@ class NeutralChartsTest extends TestCase
                 'A chart carries a judgement colour.',
             );
         }
+    }
+
+    /**
+     * The weight line gets a scale so it can be read, and that is all it gets.
+     * A dashed reference on this chart would be a target weight, which the app
+     * does not have and does not offer (hard rule 4).
+     */
+    public function test_the_weight_line_is_given_a_scale_and_no_target(): void
+    {
+        $today = CarbonImmutable::today();
+        $this->logDay($today, 1800);
+
+        foreach ([80.0, 79.4, 78.2] as $i => $kg) {
+            WeightEntry::query()->create([
+                'recorded_on' => $today->subDays(2 - $i)->toDateString(),
+                'weight_kg' => $kg,
+            ]);
+        }
+
+        foreach ([route('weight.index'), route('history.index')] as $url) {
+            $html = (string) $this->get($url)->assertOk()->getContent();
+
+            $this->assertStringContainsString('chart__line', $html, "No weight line on {$url}.");
+            $this->assertStringContainsString('chart-scale', $html, "The line on {$url} carries no scale.");
+            $this->assertStringContainsString('chart-dates', $html, "The line on {$url} carries no dates.");
+        }
+
+        // Setting a goal must not put a reference on the weight line: a daily
+        // calorie goal is not a target weight, and the app has no such thing.
+        Goal::query()->create(['daily_kcal' => 2000]);
+
+        preg_match('/<div class="chart-plot">(.*?)<\/svg>/s', (string) $this->get(route('weight.index'))
+            ->assertOk()->getContent(), $chart);
+
+        preg_match_all('/<line class="([^"]*)"/', $chart[1] ?? '', $rules);
+        $this->assertNotEmpty($rules[1], 'No rules at all, so nothing was actually checked.');
+        $this->assertSame(
+            array_fill(0, count($rules[1]), 'chart__grid'),
+            $rules[1],
+            'The weight line carries a rule that is not part of its scale.',
+        );
     }
 
     public function test_the_goal_line_is_drawn_only_when_a_goal_is_set(): void

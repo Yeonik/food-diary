@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\WeightEntry;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
@@ -19,8 +20,12 @@ final class WeightSeries
     private const PAD = 10.0;
 
     /**
+     * Each point carries the reading and the day it belongs to as well as its
+     * coordinates, so the component can label the scale without re-deriving the
+     * arithmetic that put the dot where it is.
+     *
      * @param  Collection<int, WeightEntry>  $entries
-     * @return list<array{x: float, y: float, label: string}>
+     * @return list<array{x: float, y: float, value: float, date: CarbonInterface, label: string}>
      */
     public static function points(Collection $entries, float $width = 900.0, float $height = 200.0): array
     {
@@ -50,6 +55,8 @@ final class WeightSeries
             $points[] = [
                 'x' => round($x, 1),
                 'y' => round($y, 1),
+                'value' => $entry->weight_kg,
+                'date' => $entry->recorded_on,
                 'label' => $entry->recorded_on->format('Y-m-d').': '.$entry->weight_kg.' kg',
             ];
         }
