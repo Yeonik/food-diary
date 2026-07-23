@@ -27,8 +27,18 @@ and before the first upload. Two mitigations are implemented, not just promised:
 - **All photo metadata is stripped before the image leaves the machine.** The
   photo is re-encoded through GD, which drops the entire EXIF block — GPS
   coordinates, device make and model, and capture time — and the encoder's own
-  JPEG comment is removed too. This is verified by a test against a real
-  GPS-tagged fixture (`tests/Unit/PhotoPreparerTest.php`).
+  JPEG comment is removed too.
+
+  Orientation is the one tag that cannot simply vanish. A phone does not rotate
+  the pixels it captures; it writes an orientation tag and lets the viewer do
+  the turning. Dropping that tag with the rest would leave a portrait meal lying
+  on its side — for the model, and in the diary. So the rotation is applied to
+  the pixels first, and the tag then goes with everything else.
+
+  Both halves are verified against a generated phone-style fixture that carries
+  GPS coordinates and an orientation tag: the test asserts no EXIF survives, and
+  that the image came out turned the right way
+  (`tests/Unit/PhotoPreparerTest.php`).
 - **The photo is deleted once the entry is confirmed** (configurable).
 
 Uploads are also treated as attacker-controlled: validated by content rather
@@ -103,11 +113,20 @@ These are decisions, not missing features:
 - Remaining calories is **a number, not a verdict**. No red/green, no warning
   colours, no "over budget" language. A negative remaining is just a number.
 - **No streaks, no badges, no daily pass/fail.** A missed day is a missed day.
-- Editing and deleting entries is easy and unpenalised.
+- Editing and deleting entries is easy and unpenalised. Delete sits beside Save
+  in the entry editor, with no warning beyond the confirm and no tally kept.
 - Weight is a log and a line — no BMI verdict, no target-weight nagging, no
   commentary on the trend.
 - The app never suggests lowering a target. Goals are entirely optional; with no
-  goal set, no "remaining" is shown at all.
+  goal set, no "remaining" is shown at all, and the target card is visibly
+  dimmed to say the diary works without one.
+- **The charts judge nothing either.** Every calorie bar is the same colour
+  whatever its value — a day over the goal does not redden — and the goal itself
+  is a dashed reference line, not a pass mark. The day's ring never changes
+  colour, at any value. A day with no entries is drawn as a zero rather than
+  skipped, so the time axis stays honest, and the average divides by the days
+  that have entries rather than flattering itself with the whole range.
+  `tests/Feature/NeutralChartsTest.php` holds this to the markup.
 
 ## No scraping
 
@@ -125,14 +144,72 @@ is a decision, not an omission: a self-hosted single-user tool is simpler to run
 and to verify when the whole front-end is one stylesheet and a handful of inline
 SVG icons.
 
-The typeface is **Manrope** (SIL Open Font License; the licence travels with the
-files in `public/fonts/OFL.txt`). Three weights ship — 400, 600, 800 — in the
-Latin and Cyrillic subsets only; Latin-ext and Vietnamese are dropped to keep
-the payload small on mobile data, where the app is used. Cyrillic is shipped
-because the interface is bilingual (Russian and English). The font is
-self-hosted rather than fetched from a font CDN at runtime, because a
+### The design system
+
+The layout comes from an approved static design build — plain HTML and CSS —
+transcribed rather than eyeballed. Its colour tokens are kept under role names
+(`--card` is a card, `--surface` is the screen behind it) so a rule reads as
+what it does, and a small set of Blade components carries the recurring pieces:
+the source badge, the macro row, the calorie ring, the segmented switch, the
+toggle, the stepper, the empty state.
+
+The interface is bilingual — Russian and English — switched from the goal screen
+and remembered in a cookie; both locales are held to the same key set by
+`tests/Feature/LocalizationTest.php`.
+
+The shell is a rail beside a scrolling column on a wide screen, and a bottom tab
+bar with a floating add button below 900px. That frame is sized in `dvh` rather
+than `vh` on purpose: a phone's address bar shrinks the visual viewport, and a
+`vh`-tall frame pushes the tab bar and the button underneath the browser's own
+chrome, where they cannot be tapped.
+
+Photographing a meal uses `capture="environment"` on an ordinary file input, so
+the phone opens its own camera app. Meals are shot close up in poor kitchen
+light, which is exactly where autofocus, exposure and full sensor resolution
+earn their keep — and an in-page viewfinder would give up all three. The barcode
+path
+does the same thing: its dark panel is a large tap target that opens that
+camera, not a live preview — nothing is being scanned until a frame comes back.
+
+### Progressive enhancement, and its one exception
+
+JavaScript in this app is one file of under 200 lines, and almost everything
+works without it. Every form is a plain POST. The toggles are checkboxes that
+submit with their form. The add menu and the reveal of an entry's edit and
+delete icons are `<details>` elements. The stepper's ± buttons only nudge a
+number input that is editable anyway. The "log by hand" dialog is a native
+`<dialog>`, and with scripting off its openers are ordinary links to the same
+page. Language, dates, periods and paging are links and submit buttons.
+
+**The confirm screen is the deliberate exception.** It asks one question per
+recognised dish — which source should supply this dish's numbers — and its Log
+button stays `disabled` until every dish has an answer. Enabling it is the one
+job that needs scripting, so with JavaScript off that screen cannot be
+submitted. The rule it enforces is not a client-side one: the server refuses to
+log a dish with no chosen source regardless
+(`tests/Feature/ConfirmScreenTest.php`). The button is there so the screen
+explains itself rather than failing quietly.
+
+Barcode *scanning* needs scripting too, for the same reason it needs a modern
+browser — it is a browser API. Typing the number never does.
+
+### The typeface
+
+**Manrope** (SIL Open Font License; the licence travels with the files in
+`public/fonts/OFL.txt`). Three weights ship — 400, 600, 800 — in the Latin and
+Cyrillic subsets only; Latin-ext and Vietnamese are dropped to keep the payload
+small on mobile data, where the app is used.
+
+Cyrillic is why it is Manrope at all. The design build asks for Plus Jakarta
+Sans, which has no Cyrillic — half this interface would have fallen back to
+whatever the device had lying around. Manrope covers both alphabets in one file
+set, and is close enough in proportion that the build's measurements carried
+over unchanged.
+
+It is self-hosted rather than fetched from a font CDN at runtime, because a
 third-party request from a page that logs what someone eats is a leak the user
-did not ask for.
+did not ask for. That is the same reasoning that keeps thumbnails out of the
+library.
 
 ## Architecture
 
