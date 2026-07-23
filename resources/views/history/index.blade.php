@@ -33,7 +33,9 @@
                 <div class="chart-title">
                     <span>{{ __('history.kcal_per_day') }}</span>
                     @if ($goalKcal !== null)
-                        <span>{{ __('history.goal_ref', ['kcal' => \App\Support\Format::kcal($goalKcal)]) }}</span>
+                        {{-- The dashes are the legend: they are what the goal line
+                             looks like on the chart below. --}}
+                        <span><span aria-hidden="true">— —</span> {{ __('history.goal_ref', ['kcal' => \App\Support\Format::kcal($goalKcal)]) }}</span>
                     @endif
                 </div>
                 <x-chart.kcal-bars :days="$summary->days" :goal="$goalKcal" :label="__('history.kcal_per_day')" />

@@ -534,16 +534,24 @@ select.field { cursor: pointer; }
 
 /* --- Charts (hand-rolled SVG) ------------------------------------------------ */
 
-.chart { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; }
+/* The height is set on the element — History draws these short and side by side,
+   the Weight screen draws one tall — and the box is stretched to the card's
+   width. Strokes therefore ask not to be scaled, so a line stays 3px and a
+   reading stays round however wide the card gets. */
+.chart { display: block; overflow: visible; }
 /* One soft tone for every bar whatever the value — over the goal never reddens
    (hard rule 4). The goal is a dashed teal reference that judges nothing. */
 .chart__bar { fill: #cfe0dd; }
-.chart__bar--empty { fill: var(--border); }
-.chart__goal { stroke: var(--primary); stroke-width: 1.6; stroke-dasharray: 6 6; fill: none; opacity: 0.8; }
-.chart__line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.chart__dot { fill: #fff; stroke: var(--primary); stroke-width: 2.6; }
-.chart__axis { fill: var(--muted); font-size: 11px; font-weight: 600; }
-.chart__grid { stroke: #eef1f1; stroke-width: 1; }
+.chart__bar--empty { fill: var(--border); }        /* a day with no entries: zero, drawn, not skipped */
+.chart__goal { stroke: var(--primary); stroke-width: 1.6; stroke-dasharray: 6 6; fill: none; opacity: 0.8; vector-effect: non-scaling-stroke; }
+.chart__line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.chart__dot { fill: none; stroke: var(--primary); stroke-width: 11; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart__dot-core { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+/* Day labels under the bars: HTML, so they are never squashed by the stretch and
+   stay readable at any width. One cell per bar, same division as the slots. */
+.chart-axis { display: flex; margin-top: 6px; }
+.chart-axis span { flex: 1; min-width: 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); }
 
 /* Macro split — a neutral proportion bar, teal family only, never a verdict.
    Named `split` because `.macro` is the day summary's macro card. */
