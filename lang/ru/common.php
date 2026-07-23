@@ -11,4 +11,8 @@ return [
     'save' => 'Сохранить',
     'optional' => '(необязательно)',
     'confirm_delete' => 'Удалить запись?',
+    'previous' => 'Назад',
+    'next' => 'Вперёд',
+    'page_of' => 'Страница :current из :total',
+    'pagination' => 'Постраничная навигация',
 ];

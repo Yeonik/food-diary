@@ -205,7 +205,7 @@ h1, h2, h3 { font-weight: 800; line-height: 1.2; }
 .btn-d { background: var(--card); color: var(--danger); border-color: var(--border); }
 .btn-d:hover { background: var(--surface); color: var(--danger); }
 .btn-block { width: 100%; justify-content: center; padding: 14px; }
-.btn:disabled { background: #e3e7e8; color: #a9b3b3; border-color: #e3e7e8; cursor: not-allowed; }
+.btn:disabled, .btn.is-disabled { background: #e3e7e8; color: #a9b3b3; border-color: #e3e7e8; cursor: not-allowed; }
 
 .icon-btn {
     width: 32px; height: 32px; flex: none;
@@ -223,7 +223,6 @@ h1, h2, h3 { font-weight: 800; line-height: 1.2; }
 .card.dim { opacity: 0.5; }              /* the goal card, when the goal is off */
 
 .eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-.eyebrow.teal { color: var(--primary); }
 .eyebrow.muted { color: var(--text-muted); }
 
 /* Source badges (hard rule 2). Verified is a teal-tint pill with a check; USDA
@@ -572,7 +571,8 @@ select.field { cursor: pointer; }
 .errors { background: #f6f0e8; border: 1px solid #e4d6c0; color: #6b5836; border-radius: 12px; padding: 10px 14px 10px 16px; margin: 0 0 14px; font-size: 14px; }
 .errors ul { margin: 0; padding-left: 18px; }
 .field-error { color: #8a6d3b; font-size: 12px; margin-top: 4px; }
-.pagination { margin-top: 18px; font-size: 14px; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.pager__pos { font-size: 13px; color: var(--text-muted); font-weight: 600; }
 
 /* --- Responsive --------------------------------------------------------------- */
 

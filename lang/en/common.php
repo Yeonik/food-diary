@@ -11,4 +11,8 @@ return [
     'save' => 'Save',
     'optional' => '(optional)',
     'confirm_delete' => 'Delete this entry?',
+    'previous' => 'Previous',
+    'next' => 'Next',
+    'page_of' => 'Page :current of :total',
+    'pagination' => 'Pagination',
 ];

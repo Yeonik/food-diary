@@ -24,17 +24,39 @@ use Illuminate\View\View;
  */
 class FoodItemController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, RecipeCalculator $calculator): View
     {
         $search = is_string($request->query('q')) ? $request->query('q') : '';
 
         $items = FoodItem::query()
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->orderBy('name')
+            ->with('ingredients.ingredient')
             ->paginate(30)
             ->withQueryString();
 
-        return view('library.index', ['items' => $items, 'search' => $search]);
+        // A recipe stores no per-100 g figures of its own — they come from its
+        // ingredients — so the list computes them for the rows it is about to
+        // draw. A recipe that somehow cycles is listed without a figure rather
+        // than taking the whole screen down; saving one is already refused.
+        $recipeKcal = [];
+        foreach ($items as $item) {
+            if (! $item->isRecipe()) {
+                continue;
+            }
+
+            try {
+                $recipeKcal[$item->id] = $calculator->profileFor($item)->kcal;
+            } catch (RecipeCycleException) {
+                // Left out on purpose: no number is better than a wrong one.
+            }
+        }
+
+        return view('library.index', [
+            'items' => $items,
+            'search' => $search,
+            'recipeKcal' => $recipeKcal,
+        ]);
     }
 
     public function create(): View
