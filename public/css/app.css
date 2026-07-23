@@ -369,15 +369,19 @@ select.field { cursor: pointer; }
 .weight { display: flex; gap: 16px; align-items: flex-start; }
 .weight-col { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
 .weight-chart { flex: 1; min-width: 0; }
-.wnew-row { display: flex; gap: 10px; }
-.wnew-val { flex: 1; background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; align-items: baseline; gap: 4px; }
-.wnew-val b { font-size: 22px; font-weight: 800; }
+.wnew-row { display: flex; gap: 10px; align-items: stretch; }
+/* The build shows a static value here; ours is the field itself, so the input
+   takes the big number's styling and the box carries the focus ring. */
+.wnew-val { flex: 1; min-width: 0; background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; align-items: baseline; gap: 4px; cursor: text; margin: 0; }
+.wnew-val:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }
+.wnew-val input { flex: 1; min-width: 0; border: 0; padding: 0; background: none; outline: none; font-size: 22px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .wnew-val span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
 .wlog { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 6px 18px; }
 .wlog-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .wlog-row:last-child { border-bottom: none; }
 .wlog-row .d { font-size: 14px; color: var(--text-muted); font-weight: 600; }
 .wlog-row .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wlog-act { display: flex; align-items: center; gap: 10px; }   /* reading + its delete */
 
 /* --- Library ---------------------------------------------------------------- */
 
@@ -547,6 +551,7 @@ select.field { cursor: pointer; }
 .chart__line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .chart__dot { fill: none; stroke: var(--primary); stroke-width: 11; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .chart__dot-core { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart__grid { stroke: #eef1f1; stroke-width: 1; vector-effect: non-scaling-stroke; }
 
 /* Day labels under the bars: HTML, so they are never squashed by the stretch and
    stay readable at any width. One cell per bar, same division as the slots. */

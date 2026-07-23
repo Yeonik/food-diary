@@ -23,12 +23,22 @@ class WeightController extends Controller
 
         return view('weight.index', [
             'entries' => $entries->sortByDesc('recorded_on')->values(),
-            'chart' => WeightSeries::points($entries),
+            // This screen draws the line tall; History draws it short.
+            'chart' => WeightSeries::points($entries, 820, 320),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        // A Russian keyboard offers a comma for the decimal, and half the scales
+        // in the world print one. Taking only a dot would reject a correct
+        // reading over its punctuation, so the separator is normalised before the
+        // value is validated as a number.
+        $weight = $request->input('weight_kg');
+        if (is_string($weight)) {
+            $request->merge(['weight_kg' => str_replace(',', '.', trim($weight))]);
+        }
+
         $validated = $request->validate([
             'recorded_on' => ['required', 'date'],
             'weight_kg' => ['required', 'numeric', 'min:1', 'max:600'],
