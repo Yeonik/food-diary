@@ -55,7 +55,15 @@ function updateConfirmSubmit() {
         }
     });
 
-    submit.disabled = chosen.size !== groups.size;
+    const complete = chosen.size === groups.size;
+    submit.disabled = !complete;
+
+    // The hint explains the disabled button; once every dish has a source it has
+    // nothing left to say.
+    const hint = document.querySelector('[data-confirm-hint]');
+    if (hint) {
+        hint.hidden = complete;
+    }
 }
 
 document.addEventListener('change', function (event) {

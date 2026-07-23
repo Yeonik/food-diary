@@ -20,98 +20,140 @@
             ['route' => 'library.index', 'match' => 'library.*', 'icon' => 'library', 'label' => __('nav.library')],
             ['route' => 'goal.edit',     'match' => 'goal.*',    'icon' => 'goal',    'label' => __('nav.goal')],
         ];
+
+        // Which screen the back arrow returns to. The five above are the roots and
+        // show no arrow; everything else is reached from one of them. Mirrors the
+        // build's PARENT map.
+        $parents = [
+            'log.photo' => 'diary.index',
+            'log.manual' => 'diary.index',
+            'log.confirm' => 'diary.index',
+            'log.barcode' => 'diary.index',
+            'log.barcode.confirm' => 'log.barcode',
+            'entries.edit' => 'diary.index',
+            'library.create' => 'library.index',
+            'library.edit' => 'library.index',
+            'library.recipe.create' => 'library.index',
+            'library.recipe.edit' => 'library.index',
+        ];
+
+        $current = request()->route()?->getName();
+        $backTo = $parents[$current] ?? null;
+
+        // The three ways to log something ride along with the day — and only when
+        // it already has entries, because an empty day offers them in its own
+        // placeholder instead. $hasAnyEntry comes from the diary view.
+        $onDay = request()->routeIs('diary.*') && ($hasAnyEntry ?? false);
     @endphp
 
     <div class="app">
-        {{-- Desktop: left sidebar --}}
-        <nav class="sidebar" aria-label="{{ __('nav.brand') }}">
-            <span class="sidebar__brand">{{ __('nav.brand') }}</span>
+        {{-- Desktop: the left rail. Hidden below 900px, where the tab bar takes over. --}}
+        <nav class="side" aria-label="{{ __('nav.brand') }}">
+            <div class="brand">
+                <div class="logo" aria-hidden="true">{{ mb_substr(__('nav.brand'), 0, 1) }}</div>
+                <b>{{ __('nav.brand') }}</b>
+            </div>
             @foreach ($nav as $item)
-                <a class="sidebar__item" href="{{ route($item['route']) }}"
-                   @if (request()->routeIs($item['match'])) aria-current="page" @endif>
-                    <x-icon :name="$item['icon']" />
-                    <span>{{ $item['label'] }}</span>
-                </a>
+                <x-nav-item :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
             @endforeach
+            <div class="side-spacer"></div>
         </nav>
 
-        <main class="app__content" id="content">
-            {{-- Desktop quick-add: two compact buttons, top-right. On mobile the
-                 round FAB below does this job, so this bar is desktop-only. --}}
-            <div class="quickadd">
-                <a class="btn btn--ghost btn--sm" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
-                    <x-icon name="plus" /> {{ __('nav.add_manual') }}
-                </a>
-                <a class="btn btn--ghost btn--sm" href="{{ route('log.barcode') }}">
-                    <x-icon name="barcode" /> {{ __('nav.add_barcode') }}
-                </a>
-                <a class="btn btn--sm" href="{{ route('log.photo') }}">
-                    <x-icon name="camera" /> {{ __('nav.add_photo') }}
-                </a>
+        <div class="main">
+            {{-- Topbar: back arrow (off the root screens), the screen's title, and
+                 the day's three ways to log something (desktop only). --}}
+            <div class="topbar">
+                <div class="topbar-l">
+                    @if ($backTo)
+                        <a class="back" href="{{ route($backTo) }}" aria-label="{{ __('common.back') }}">‹</a>
+                    @endif
+                    <div class="title">@yield('title', __('nav.brand'))</div>
+                </div>
+                @if ($onDay)
+                    <div class="day-actions">
+                        <a class="btn btn-s" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
+                            <x-icon name="manual" /> {{ __('nav.add_manual') }}
+                        </a>
+                        <a class="btn btn-s" href="{{ route('log.barcode') }}">
+                            <x-icon name="barcode" /> {{ __('nav.add_barcode') }}
+                        </a>
+                        <a class="btn btn-p" href="{{ route('log.photo') }}">
+                            <x-icon name="camera" /> {{ __('nav.add_photo') }}
+                        </a>
+                    </div>
+                @endif
             </div>
 
-            @if (session('status'))
-                <p class="notice">{{ session('status') }}</p>
-            @endif
-            @if ($errors->any())
-                <div class="errors">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+            <main class="content scr" id="content">
+                <div class="wrap">
+                    @if (session('status'))
+                        <p class="notice">{{ session('status') }}</p>
+                    @endif
+                    @if ($errors->any())
+                        <div class="errors">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @yield('content')
                 </div>
+            </main>
+
+            {{-- Mobile: bottom tab bar --}}
+            <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
+                @foreach ($nav as $item)
+                    <x-nav-item layout="tab" :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
+                @endforeach
+            </nav>
+
+            {{-- Mobile: the floating action button, on the day screen only. A
+                 <details>, so the menu opens with JavaScript off. --}}
+            @if ($onDay)
+                <details class="fab-wrap show">
+                    <summary class="fab" aria-label="{{ __('nav.add') }}">
+                        <x-icon name="plus" stroke-width="2.2" />
+                    </summary>
+                    <div class="fab-menu">
+                        <a class="fab-action" href="{{ route('log.photo') }}">
+                            <x-icon name="camera" /> <span>{{ __('nav.add_photo') }}</span>
+                        </a>
+                        <a class="fab-action" href="{{ route('log.barcode') }}">
+                            <x-icon name="barcode" /> <span>{{ __('nav.add_barcode') }}</span>
+                        </a>
+                        <a class="fab-action" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
+                            <x-icon name="manual" /> <span>{{ __('nav.add_manual') }}</span>
+                        </a>
+                    </div>
+                </details>
             @endif
-
-            @yield('content')
-        </main>
-    </div>
-
-    {{-- Mobile: bottom tab bar --}}
-    <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
-        @foreach ($nav as $item)
-            <a class="tabbar__item" href="{{ route($item['route']) }}"
-               @if (request()->routeIs($item['match'])) aria-current="page" @endif>
-                <x-icon :name="$item['icon']" />
-                <span>{{ $item['label'] }}</span>
-            </a>
-        @endforeach
-    </nav>
-
-    {{-- Mobile: floating action button with two entries (pure HTML, no JS) --}}
-    <details class="fab">
-        <summary class="fab__toggle" aria-label="{{ __('nav.add') }}">
-            <x-icon name="plus" />
-        </summary>
-        <div class="fab__menu">
-            <a class="fab__action" href="{{ route('log.photo') }}">
-                <x-icon name="camera" /> <span>{{ __('nav.add_photo') }}</span>
-            </a>
-            <a class="fab__action" href="{{ route('log.barcode') }}">
-                <x-icon name="barcode" /> <span>{{ __('nav.add_barcode') }}</span>
-            </a>
-            <a class="fab__action" href="{{ route('log.manual') }}" data-dialog-open="manual-dialog">
-                <x-icon name="manual" /> <span>{{ __('nav.add_manual') }}</span>
-            </a>
         </div>
-    </details>
+    </div>
 
     {{-- Manual entry as a dialog: opened by the "by hand" actions with JS, closed
          by Esc (native) or a click outside. Without JS the same actions are plain
          links to /log/manual, so the flow still works. --}}
-    <dialog id="manual-dialog" class="dialog">
-        <form method="post" action="{{ route('log.manual.store') }}" class="dialog__panel">
+    <dialog id="manual-dialog" class="modal">
+        <form method="post" action="{{ route('log.manual.store') }}">
             @csrf
-            <div class="dialog__head">
-                <h2>{{ __('manual.title') }}</h2>
-                <button type="button" class="dialog__close" data-dialog-close aria-label="{{ __('common.cancel') }}">×</button>
+            <div class="modal-head">
+                <div class="t">{{ __('manual.title') }}</div>
+                <button type="button" class="modal-close" data-dialog-close aria-label="{{ __('common.cancel') }}">×</button>
             </div>
-            <p class="muted">{{ __('manual.intro') }}</p>
-            <div class="field">
-                <label for="manual-name">{{ __('manual.name') }}</label>
-                <input type="text" id="manual-name" name="name" required>
+            <div class="modal-body">
+                <p class="caption">{{ __('manual.intro') }}</p>
+                <div>
+                    <label class="flabel" for="manual-name">{{ __('manual.name') }}</label>
+                    <input type="text" class="field" id="manual-name" name="name" required>
+                </div>
+                <div class="actions-end" style="margin-top:0">
+                    <button type="button" class="btn btn-s" data-dialog-close>{{ __('common.cancel') }}</button>
+                    <button class="btn btn-p" type="submit">{{ __('manual.search') }}</button>
+                </div>
             </div>
-            <button class="btn btn--block" type="submit">{{ __('manual.search') }}</button>
         </form>
     </dialog>
 

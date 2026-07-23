@@ -1,13 +1,13 @@
 @props(['icon', 'title', 'body'])
 
 {{-- Neutral empty placeholder — a soft teal icon tile, a title, a calm
-     explanation, an optional action. Never scolds. Mirrors the kit EmptyState.
+     explanation, an optional action. Never scolds (design/build, .empty).
      Pass the action via <x-slot:action>. --}}
-<div class="empty-state">
-    <div class="empty-state__tile"><x-icon :name="$icon" /></div>
-    <div class="empty-state__title">{{ $title }}</div>
-    <p class="empty-state__body">{{ $body }}</p>
+<div class="empty">
+    <div class="empty-tile"><x-icon :name="$icon" /></div>
+    <h3>{{ $title }}</h3>
+    <p>{{ $body }}</p>
     @isset($action)
-        <div class="empty-state__action">{{ $action }}</div>
+        <div class="empty-actions">{{ $action }}</div>
     @endisset
 </div>

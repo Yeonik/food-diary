@@ -3,9 +3,6 @@
 @section('title', $recipe ? __('library.recipe_edit_title') : __('library.recipe_new_title'))
 
 @section('content')
-    <h1>{{ $recipe ? __('library.recipe_edit_title') : __('library.recipe_new_title') }}</h1>
-    <p class="muted">{{ __('library.recipe_intro') }}</p>
-
     @php
         $action = $recipe ? route('library.recipe.update', $recipe) : route('library.recipe.store');
         $existing = old('ingredients', $recipe
@@ -13,53 +10,62 @@
             : [['item_id' => '', 'grams' => '']]);
     @endphp
 
-    <form method="post" action="{{ $action }}" class="panel">
-        @csrf
-        @if ($recipe) @method('PATCH') @endif
-        <div>
-            <label>{{ __('library.recipe_name') }}</label>
-            <input type="text" name="name" value="{{ old('name', $recipe?->name) }}" style="width:100%" required>
-        </div>
+    <div class="narrow600 vform">
+        <p class="caption">{{ __('library.recipe_intro') }}</p>
 
-        <h2>{{ __('library.ingredients') }}</h2>
-        <table id="ingredients">
-            <thead><tr><th>{{ __('library.col_item') }}</th><th>{{ __('library.col_grams') }}</th><th></th></tr></thead>
-            <tbody>
-                @foreach ($existing as $i => $line)
-                    <tr>
-                        <td>
-                            <select name="ingredients[{{ $i }}][item_id]" required>
+        <form method="post" action="{{ $action }}" class="vform">
+            @csrf
+            @if ($recipe) @method('PATCH') @endif
+
+            <x-field name="name" :label="__('library.recipe_name')" :value="old('name', $recipe?->name)" required />
+
+            <div>
+                <div class="flabel">{{ __('library.ingredients') }}</div>
+                <div class="ing-list" id="ingredients">
+                    @foreach ($existing as $i => $line)
+                        <div class="ing">
+                            <select class="field" style="flex:1;min-width:0" name="ingredients[{{ $i }}][item_id]" required
+                                    aria-label="{{ __('library.col_item') }}">
                                 <option value="">{{ __('library.choose') }}</option>
                                 @foreach ($ingredients as $option)
                                     <option value="{{ $option->id }}" @selected((string) $line['item_id'] === (string) $option->id)>{{ $option->name }}</option>
                                 @endforeach
                             </select>
-                        </td>
-                        <td><input type="number" step="0.1" min="0.1" name="ingredients[{{ $i }}][grams]" value="{{ $line['grams'] }}" required></td>
-                        <td><button type="button" class="link" onclick="this.closest('tr').remove()">{{ __('library.remove') }}</button></td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-        <p><button type="button" class="link" onclick="addIngredientRow()">{{ __('library.add_ingredient') }}</button></p>
+                            <input type="number" class="field" style="width:110px;flex:none" step="0.1" min="0.1"
+                                   name="ingredients[{{ $i }}][grams]" value="{{ $line['grams'] }}" required
+                                   aria-label="{{ __('library.col_grams') }}">
+                            <button type="button" class="ing-del" onclick="this.closest('.ing').remove()"
+                                    aria-label="{{ __('library.remove') }}" title="{{ __('library.remove') }}">
+                                <x-icon name="delete" width="13" height="13" />
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+                <button type="button" class="add-dashed" onclick="addIngredientRow()">+ {{ __('library.add_ingredient') }}</button>
+            </div>
 
-        <p style="margin-top:12px"><button type="submit">{{ __('library.save_recipe') }}</button>
-            <a class="btn link" href="{{ route('library.index') }}">{{ __('common.cancel') }}</a></p>
-    </form>
+            <div class="actions-end" style="margin-top:0">
+                <x-button variant="secondary" href="{{ route('library.index') }}">{{ __('common.cancel') }}</x-button>
+                <x-button type="submit">{{ __('library.save_recipe') }}</x-button>
+            </div>
+        </form>
+    </div>
 
     <template id="ingredient-row">
-        <tr>
-            <td>
-                <select required>
-                    <option value="">{{ __('library.choose') }}</option>
-                    @foreach ($ingredients as $option)
-                        <option value="{{ $option->id }}">{{ $option->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td><input type="number" step="0.1" min="0.1" required></td>
-            <td><button type="button" class="link" onclick="this.closest('tr').remove()">{{ __('library.remove') }}</button></td>
-        </tr>
+        <div class="ing">
+            <select class="field" style="flex:1;min-width:0" required aria-label="{{ __('library.col_item') }}">
+                <option value="">{{ __('library.choose') }}</option>
+                @foreach ($ingredients as $option)
+                    <option value="{{ $option->id }}">{{ $option->name }}</option>
+                @endforeach
+            </select>
+            <input type="number" class="field" style="width:110px;flex:none" step="0.1" min="0.1" required
+                   aria-label="{{ __('library.col_grams') }}">
+            <button type="button" class="ing-del" onclick="this.closest('.ing').remove()"
+                    aria-label="{{ __('library.remove') }}" title="{{ __('library.remove') }}">
+                <x-icon name="delete" width="13" height="13" />
+            </button>
+        </div>
     </template>
 
     <script>
@@ -68,10 +74,10 @@
         let nextIndex = {{ count($existing) }};
         function addIngredientRow() {
             const tpl = document.getElementById('ingredient-row').content.cloneNode(true);
-            const row = tpl.querySelector('tr');
+            const row = tpl.querySelector('.ing');
             row.querySelector('select').name = `ingredients[${nextIndex}][item_id]`;
             row.querySelector('input').name = `ingredients[${nextIndex}][grams]`;
-            document.querySelector('#ingredients tbody').appendChild(row);
+            document.getElementById('ingredients').appendChild(row);
             nextIndex++;
         }
     </script>

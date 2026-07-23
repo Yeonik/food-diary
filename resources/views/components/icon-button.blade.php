@@ -1,14 +1,14 @@
 @props([
-    'tone' => 'neutral',   // neutral | danger | accent
+    'tone' => 'neutral',   // neutral | danger
     'label',               // accessible label — required (aria-label + title)
     'icon' => null,
     'href' => null,
     'type' => 'submit',
 ])
 
-{{-- Compact square icon-only action — edit / delete on records. Mirrors the kit
-     IconButton. --}}
-@php $classes = 'icon-btn'.($tone !== 'neutral' ? ' icon-btn--'.$tone : ''); @endphp
+{{-- Compact square icon-only action — edit / delete on records
+     (design/build, .icon-btn). --}}
+@php $classes = 'icon-btn'.($tone === 'danger' ? ' danger' : ''); @endphp
 
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }} aria-label="{{ $label }}" title="{{ $label }}">@if ($icon)<x-icon :name="$icon" />@endif{{ $slot }}</a>

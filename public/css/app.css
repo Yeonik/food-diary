@@ -2,13 +2,25 @@
    Tailwind, no Node: this stylesheet and the fonts beside it are the whole
    front-end pipeline. See the README ("Front-end: zero tooling").
 
+   Transcribed from design/build/app.css, the approved layout source. That file
+   names its tokens after their colours (--teal, --bg, --surface); ours name them
+   after their role, so the rules below are the build's with the names mapped:
+     --teal   -> --primary        --bg      -> --surface  (the screen)
+     --soft   -> --primary-tint   --surface -> --card     (the cards)
+     --line   -> --border         --ink     -> --text
+     --muted  -> --text-muted     --muted2  -> --muted
+   Values are identical either way — the build's :root already agreed with ours.
+
    The palette is deliberately neutral — one primary colour, no red/green, no
    warning hues. A number is information, never a verdict (hard rule 4). */
 
 /* --- Typeface --------------------------------------------------------------
    Manrope, self-hosted, SIL OFL (see public/fonts/OFL.txt). Three weights and
    two subsets only — Latin + Cyrillic — because the app is used on mobile data
-   and the audience is Russian; Latin-ext and Vietnamese are not shipped. */
+   and the audience is Russian; Latin-ext and Vietnamese are not shipped.
+
+   The build @imports Plus Jakarta Sans from Google Fonts. We do not: it has no
+   Cyrillic, and a CDN font is a third-party request on every page load. */
 
 @font-face {
     font-family: 'Manrope'; font-style: normal; font-weight: 400; font-display: swap;
@@ -44,21 +56,16 @@
 /* --- Tokens ---------------------------------------------------------------- */
 
 :root {
-    /* Reconciled with design/prototype_v6/tokens/colors.css BY ROLE. The kit's
-       names differ (its --surface is the card, its --bg the screen); ours keep
-       role names. Values are the kit's. */
-    --primary: #1c5d5a;        /* kit --teal */
-    --primary-dark: #164847;   /* kit --teal-2 */
-    --primary-tint: #e7f1ef;   /* kit --teal-soft */
-    --text: #182223;           /* kit --ink */
-    --text-muted: #7c8a8c;     /* kit --muted: secondary text */
-    --muted: #9aa6a7;          /* kit --muted-2: placeholder, faint icons */
-    --muted-2: #9aa6a7;         /* explicit kit alias for placeholders */
-    --border: #e8ebec;         /* kit --line */
-    --surface: #f5f6f7;        /* the screen behind the cards (kit --bg) */
-    --surface-2: #f5f6f7;
-    --card: #ffffff;           /* the cards themselves (kit --surface) */
-    --control-off: #d5dbdb;    /* switch / stepper grey (kit literal) */
+    --primary: #1c5d5a;        /* build --teal */
+    --primary-dark: #164847;   /* build --teal2 */
+    --primary-tint: #e7f1ef;   /* build --soft */
+    --text: #182223;           /* build --ink */
+    --text-muted: #7c8a8c;     /* build --muted: secondary text */
+    --muted: #9aa6a7;          /* build --muted2: placeholder, faint icons */
+    --border: #e8ebec;         /* build --line */
+    --surface: #f5f6f7;        /* the screen behind the cards (build --bg) */
+    --card: #ffffff;           /* the cards themselves (build --surface) */
+    --control-off: #d5dbdb;    /* switch / hairline control grey */
 
     /* Macro tints — categorical, never a verdict (hard rule 4). */
     --mint: #eef6f1;           /* protein */
@@ -69,43 +76,18 @@
 
     /* Source badges. Amber is USDA's identity colour, NOT a warning; the estimate
        stays neutral (a dashed grey ≈), never alarming. */
-    --off-fg: #1c5d5a;
-    --off-bg: #e7f1ef;
     --usda-fg: #7a5b12;
     --usda-bg: #faf1d8;
 
-    /* Provenance: an estimate is visually lighter and never reads as verified. */
-    --estimate: #8a6d3b;
-
-    /* Radius — kit scale (design/prototype_v6/tokens/radius.css). */
-    --r-8: 8px;                /* badge inner */
-    --r-9: 9px;                /* icon buttons, stepper */
-    --r-10: 10px;              /* segmented */
-    --r-12: 12px;              /* fields, buttons */
-    --r-14: 14px;              /* list containers, primary mobile buttons */
-    --r-18: 18px;              /* cards */
-    --r-20: 20px;              /* meal cards, sheets */
-    --r-24: 24px;              /* summary card */
-    --r-pill: 20px;            /* chips / badges */
-    --r-round: 50%;            /* avatars, FAB, ring toggles */
-
-    /* Legacy aliases (existing rules) mapped onto the kit scale. */
-    --r-sm: 12px;
-    --r-md: 14px;
-    --r-lg: 18px;
-    --r-xl: 20px;
-
-    /* Shadows — soft, cool-tinted (kit tokens/shadows.css). */
     --shadow-card: 0 8px 24px rgba(20, 30, 30, 0.05);
     --shadow-float: 0 6px 18px rgba(20, 30, 30, 0.12);
     --shadow-fab: 0 10px 26px rgba(28, 93, 90, 0.40);
     --shadow-modal: 0 30px 70px rgba(20, 30, 30, 0.30);
-    --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.25);
 
-    --tap: 44px;               /* minimum touch target */
-    --content-max: 720px;
-    --sidebar-w: 232px;
-    --tabbar-h: 62px;
+    --sidebar-w: 236px;
+    --tabbar-h: 76px;
+    --topbar-h: 60px;
+    --wrap-max: 1040px;
 
     --font: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
@@ -113,39 +95,28 @@
 /* --- Reset & base ---------------------------------------------------------- */
 
 *, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
 
 html { -webkit-text-size-adjust: 100%; }
+html, body { height: 100%; }
 
 body {
-    margin: 0;
-    min-height: 100vh;
     font-family: var(--font);
     font-size: 15px;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--text);
     background: var(--surface);
+    color: var(--text);
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    overflow-x: hidden;              /* no horizontal scroll, ever */
 }
 
-h1, h2, h3 { margin: 0; font-weight: 800; line-height: 1.2; }
-h1 { font-size: 22px; }
-h2 { font-size: 17px; }
-h3 { font-size: 15px; }
+a { color: var(--primary); font-weight: 700; text-decoration: none; }
+a:hover { color: var(--primary-dark); }
+button, input, select, textarea { font-family: inherit; }
 
-p { margin: 0 0 10px; }
-a { color: var(--primary); text-decoration: none; }
-a:hover { text-decoration: underline; }
+h1, h2, h3 { font-weight: 800; line-height: 1.2; }
 
 .muted { color: var(--text-muted); }
-.caption { font-size: 12px; color: var(--muted); }
-
-/* Numbers are the visual anchor: tabular, heavy, larger than body copy. */
-.numeral { font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.numeral-lg { font-size: 34px; }
-.numeral-md { font-size: 22px; }
+.caption { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 
 .visually-hidden {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -154,447 +125,480 @@ a:hover { text-decoration: underline; }
 
 .skip-link {
     position: absolute; left: -9999px; top: 0; z-index: 100;
-    background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 0 0 var(--r-sm) 0;
+    background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 0 0 12px 0;
 }
 .skip-link:focus { left: 0; }
 
-/* --- App shell ------------------------------------------------------------
-   Mobile-first: a scrolling content column with a fixed bottom tab bar and a
-   floating action button. At >= 768px the tab bar becomes a left sidebar. */
+/* Scrollbars inside the content column */
+.scr::-webkit-scrollbar { width: 8px; }
+.scr::-webkit-scrollbar-thumb { background: var(--control-off); border-radius: 4px; }
 
-.app {
-    display: block;
-    min-height: 100vh;
-}
+/* --- Shell -----------------------------------------------------------------
+   A fixed frame: sidebar + (topbar over a scrolling content column). The frame
+   is sized in dvh, not vh — on a phone the address bar shrinks the visual
+   viewport, and a vh-tall frame pushes the tab bar and the FAB under the browser
+   chrome. vh stays first as the fallback for browsers without dvh. */
 
-.app__content {
-    max-width: var(--content-max);
-    margin: 0 auto;
-    padding: 16px 16px calc(var(--tabbar-h) + 84px);   /* room for tab bar + FAB */
-}
+.app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
-/* Bottom tab bar (mobile) */
-.tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-    height: var(--tabbar-h);
-    display: flex;
-    background: var(--card);
-    border-top: 1px solid var(--border);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+.side {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: var(--card); border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    display: flex; flex-direction: column; gap: 6px;
 }
-.tabbar__item {
-    flex: 1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px;
-    min-height: var(--tap);
-    color: var(--muted-2);
-    font-size: 10px; font-weight: 700;
-    text-decoration: none;
-}
-.tabbar__item:hover { text-decoration: none; }
-.tabbar__item svg { width: 22px; height: 22px; }
-.tabbar__item[aria-current='page'] { color: var(--primary); }
-
-/* Floating action button + its two-option menu (pure HTML <details>) */
-.fab {
-    position: fixed; right: 18px; bottom: calc(var(--tabbar-h) + 18px + env(safe-area-inset-bottom, 0));
-    z-index: 30;
-}
-.fab__toggle {
-    list-style: none; cursor: pointer;
-    width: 56px; height: 56px; border-radius: 50%;
-    background: var(--primary); color: #fff;
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px; }
+.logo {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--primary);
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 18px rgba(22, 72, 71, 0.32);
+    color: #fff; font-weight: 800; font-size: 16px;
 }
-.fab__toggle::-webkit-details-marker { display: none; }
-.fab__toggle svg { width: 26px; height: 26px; transition: transform 0.15s ease; }
-.fab[open] .fab__toggle svg { transform: rotate(45deg); }
-.fab__menu {
-    position: absolute; right: 0; bottom: 68px;
-    display: flex; flex-direction: column; gap: 8px;
-    min-width: 200px;
-}
-.fab__action {
-    display: flex; align-items: center; gap: 10px;
-    min-height: var(--tap);
-    padding: 12px 16px;
-    background: var(--card); color: var(--text);
-    border: 1px solid var(--border); border-radius: var(--r-md);
-    box-shadow: 0 4px 14px rgba(24, 34, 35, 0.12);
-    font-weight: 600; text-decoration: none;
-}
-.fab__action:hover { text-decoration: none; background: var(--surface-2); }
-.fab__action svg { width: 20px; height: 20px; color: var(--primary); }
-
-/* Sidebar (desktop) — hidden on mobile */
-.sidebar { display: none; }
-
-@media (min-width: 768px) {
-    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; }
-    .tabbar { display: none; }
-    .fab { display: none; }
-    .sidebar {
-        display: flex; flex-direction: column; gap: 4px;
-        position: sticky; top: 0; align-self: start;
-        height: 100vh;
-        padding: 20px 14px;
-        background: var(--card);
-        border-right: 1px solid var(--border);
-    }
-    .sidebar__brand { font-weight: 800; font-size: 18px; padding: 6px 12px 16px; }
-    .sidebar__item {
-        display: flex; align-items: center; gap: 12px;
-        min-height: var(--tap);
-        padding: 8px 12px; border-radius: var(--r-md);
-        color: var(--text-muted); font-weight: 600; text-decoration: none;
-    }
-    .sidebar__item:hover { text-decoration: none; background: var(--surface-2); }
-    .sidebar__item svg { width: 20px; height: 20px; }
-    .sidebar__item[aria-current='page'] { color: var(--primary); background: var(--primary-tint); }
-    .app__content { padding: 24px 28px 48px; }
-    .quickadd { display: flex; }         /* desktop-only quick-add, revealed here */
-}
-
-/* Desktop quick-add bar (hidden on mobile, where the FAB does this) */
-.quickadd { display: none; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
-
-/* --- Cards & lists --------------------------------------------------------- */
-
-.card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--r-18);
-    padding: 20px;                          /* kit "roomy"; --compact drops to 16 */
-    margin-bottom: 14px;
-    box-shadow: var(--shadow-card);
-}
-.card--compact { padding: 16px; }
-.card--meal { border-radius: var(--r-20); }
-.card--summary { border-radius: var(--r-24); }
-.card--dim { opacity: 0.55; }               /* the goal card, when the goal is off */
-
-.stack > * + * { margin-top: 10px; }
-
-.section-title {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin: 22px 0 10px;
-}
-.section-title h2 { font-size: 16px; }
-
-.list { list-style: none; margin: 0; padding: 0; }
-.list__row {
+.brand b { font-size: 16px; font-weight: 800; }
+.nav {
     display: flex; align-items: center; gap: 12px;
-    padding: 12px 0; border-bottom: 1px solid var(--border);
+    padding: 11px 14px; border-radius: 12px;
+    color: #5b6768; font-weight: 600; font-size: 14px;
+    text-align: left; width: 100%;
 }
-.list__row:last-child { border-bottom: 0; }
-.list__body { flex: 1; min-width: 0; }
-.list__title { font-weight: 600; }
-.list__thumb {
-    width: 44px; height: 44px; flex: none;
-    border-radius: var(--r-sm); object-fit: cover;
-    background: var(--surface-2); border: 1px solid var(--border);
+.nav:hover { color: #5b6768; }
+.nav.on { background: var(--primary-tint); color: var(--primary); font-weight: 700; }
+.nav.on:hover { color: var(--primary); }
+.nav svg { width: 20px; height: 20px; flex: none; }
+.side-spacer { flex: 1; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.topbar {
+    flex-shrink: 0; background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 0 20px; height: var(--topbar-h);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-
-/* --- Provenance markers (hard rule 2) ------------------------------------- */
-
-.prov { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
-.prov--verified { color: var(--primary); }
-/* An estimate is marked, not warned about: a light approximation glyph in a
-   neutral tone — no amber, no red. It reads as less certain, not as a problem. */
-.prov--estimate { color: var(--muted); font-weight: 400; }
-.prov__glyph { font-size: 13px; }
-
-/* --- Chips (history filters) ---------------------------------------------- */
-
-.chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip {
-    min-height: 36px; padding: 6px 14px;
-    border: 1px solid var(--border); border-radius: 999px;
-    background: var(--card); color: var(--text-muted);
-    font-weight: 600; font-size: 13px; text-decoration: none;
-    display: inline-flex; align-items: center;
+.topbar-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--card);
+    font-size: 18px; color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center;
 }
-.chip:hover { text-decoration: none; }
-.chip[aria-pressed='true'], .chip--active { background: var(--primary-tint); color: var(--primary); border-color: var(--primary-tint); }
+.back:hover { color: var(--text); }
+.day-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-/* --- Tiles (history summary) ---------------------------------------------- */
+.content { flex: 1; overflow-y: auto; padding: 22px 20px 40px; }
+.wrap { max-width: var(--wrap-max); margin: 0 auto; }
 
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
-.tile { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-card); }
-.tile__label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-.tile__value { font-weight: 800; font-size: 24px; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.tile__unit { font-size: 13px; color: var(--text-muted); font-weight: 600; }
-.tile__chart { margin-top: 10px; }
-
-/* History layout */
-.history__period { margin-bottom: 16px; }
-.history__charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-.history__tiles { margin-top: 16px; }
-.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
-.chart-head__title { font-size: 14px; font-weight: 800; }
-.chart-head__meta { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
-
-/* --- Forms ----------------------------------------------------------------- */
-
-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
-
-input, select, textarea {
-    font: inherit; width: 100%;
-    min-height: var(--tap);
-    padding: 10px 12px;
-    color: var(--text);
-    background: var(--card);
-    border: 1px solid var(--border); border-radius: var(--r-md);
-}
-input:focus, select:focus, textarea:focus {
-    outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary);
-}
-.field { margin-bottom: 12px; }
-.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
-.field-row > .field { flex: 1; min-width: 140px; }
-
-/* Numeric stepper (– value +) */
-.stepper { display: inline-flex; align-items: stretch; gap: 0; }
-.stepper__btn {
-    width: var(--tap); min-height: var(--tap);
-    border: 1px solid var(--border); background: var(--card); color: var(--primary);
-    font-size: 20px; font-weight: 800; cursor: pointer;
-}
-.stepper__btn:first-child { border-radius: var(--r-md) 0 0 var(--r-md); }
-.stepper__btn:last-child { border-radius: 0 var(--r-md) var(--r-md) 0; }
-.stepper input { text-align: center; border-radius: 0; border-left: 0; border-right: 0; width: 90px; }
-
-/* Settings rows, toggle switches and the segmented language control */
-.setting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-.setting-title { font-weight: 700; }
-
-.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
-.switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.switch__slider { position: relative; width: 50px; height: 30px; flex: none; border-radius: 15px; background: var(--control-off); transition: background 0.18s; }
-.switch__slider::after {
-    content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
-    border-radius: 50%; background: #fff; box-shadow: var(--shadow-knob); transition: transform 0.18s;
-}
-.switch input:checked + .switch__slider { background: var(--primary); }
-.switch input:checked + .switch__slider::after { transform: translateX(20px); }
-.switch input:focus-visible + .switch__slider { outline: 2px solid var(--primary); outline-offset: 2px; }
-.switch--row { display: flex; justify-content: space-between; width: 100%; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.switch--row:last-child { border-bottom: 0; }
-.switch__label { font-weight: 600; }
-
-/* Pill segmented switch (kit): track on --bg, active pane white with a soft lift. */
-.segmented { display: inline-flex; gap: 4px; background: var(--surface); padding: 3px; border-radius: var(--r-10); }
-.segmented__btn { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 6px 16px; border: 0; border-radius: var(--r-8); background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; }
-.segmented__btn:hover { text-decoration: none; }
-.segmented__btn.is-active { background: #fff; color: var(--text); font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
-
-/* --- Buttons --------------------------------------------------------------- */
+/* --- Buttons ---------------------------------------------------------------- */
 
 .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: var(--tap); padding: 11px 18px;
-    border: 1px solid var(--primary); border-radius: var(--r-12);
-    background: var(--primary); color: #fff;
-    font: inherit; font-weight: 700; line-height: 1; cursor: pointer; text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 16px; border-radius: 12px; border: 1px solid transparent;
+    font-weight: 700; font-size: 14px; line-height: 1; cursor: pointer;
 }
-.btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); text-decoration: none; }
-.btn:active { background: var(--primary-dark); }
-.btn[disabled], .btn:disabled { background: #e3e7e8; border-color: #e3e7e8; color: #a9b3b3; cursor: not-allowed; }
-.btn--block { width: 100%; }
-.btn--sm { min-height: 38px; padding: 8px 14px; font-size: 13px; }
-.btn--lg { padding: 14px 22px; font-size: 15px; }
-/* secondary = white + hairline; ghost = teal text; danger = white + red text */
-.btn--secondary { background: #fff; color: var(--text); border-color: var(--border); }
-.btn--secondary:hover { background: var(--surface); border-color: var(--border); }
-.btn--ghost { background: transparent; color: var(--primary); border-color: transparent; }
-.btn--ghost:hover { background: var(--surface-2); }
-.btn--danger { background: #fff; color: var(--danger); border-color: var(--border); }
-.btn--danger:hover { background: var(--surface); border-color: var(--border); }
-.btn--quiet { background: transparent; color: var(--primary); border-color: transparent; min-height: 36px; padding: 6px 10px; font-weight: 600; }
-.btn--danger-quiet { background: transparent; color: var(--text-muted); border-color: transparent; min-height: 36px; padding: 6px 10px; font-weight: 600; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn-p { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-p:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.btn-s { background: var(--card); color: var(--text); border-color: var(--border); }
+.btn-s:hover { background: var(--surface); color: var(--text); }
+.btn-s svg { color: var(--primary); }
+.btn-g { background: transparent; color: var(--primary); }
+.btn-g:hover { background: var(--surface); }
+.btn-d { background: var(--card); color: var(--danger); border-color: var(--border); }
+.btn-d:hover { background: var(--surface); color: var(--danger); }
+.btn-block { width: 100%; justify-content: center; padding: 14px; }
+.btn:disabled { background: #e3e7e8; color: #a9b3b3; border-color: #e3e7e8; cursor: not-allowed; }
 
-.badge {
-    font-size: 12px; font-weight: 600; color: var(--text-muted);
-    border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px;
-}
-.badge--library { color: var(--primary); border-color: var(--primary-tint); background: var(--primary-tint); }
-
-/* --- Flash & errors -------------------------------------------------------- */
-
-.notice { background: var(--primary-tint); color: var(--primary-dark); border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 14px; font-weight: 600; }
-.errors { background: #f6f0e8; border: 1px solid #e4d6c0; color: #6b5836; border-radius: var(--r-md); padding: 10px 14px 10px 16px; margin: 0 0 14px; }
-.errors ul { margin: 0; padding-left: 18px; }
-.field-error { color: var(--estimate); font-size: 12px; margin-top: 4px; }
-
-/* --- Date stepper (day screen) -------------------------------------------- */
-
-.datestep { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; }
-.datestep a, .datestep span { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; font-weight: 700; }
-.datestep__label { font-size: 16px; }
-
-/* --- Day screen (transcribed from prototype_v6/maket.html) -----------------
-   Two columns on a wide screen: the meals grid beside a sticky summary card.
-   Stacked on mobile with the summary on top. The ring never changes colour by
-   state (hard rule 4) — see the RingSummary component. */
-
-.day { display: flex; gap: 16px; align-items: flex-start; flex-direction: column; }
-.day__summary {
-    width: 100%; order: 1;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 22px; box-shadow: var(--shadow-card);
-}
-.day__meals { width: 100%; order: 2; }
-.day__meals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.day__macros { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-.day__estimates { margin-top: 14px; }
-
-/* The 720px content column is only wide enough for both columns past this. */
-@media (min-width: 1000px) {
-    .day { flex-direction: row; }
-    .day__meals { flex: 1; min-width: 0; order: 1; }
-    .day__summary { width: 320px; flex-shrink: 0; order: 2; position: sticky; top: 16px; }
-}
-
-/* Meal card — the grid gap owns the spacing, not the card's own margin. */
-.meal-card { margin-bottom: 0; }
-.meal-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.meal-card__title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.meal-card__name { font-size: 16px; font-weight: 800; }
-.meal-card__kcal { font-size: 13px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
-.meal-card__add {
-    width: 30px; height: 30px; flex: none; border-radius: 50%;
-    background: var(--primary-tint); color: var(--primary); border: 0;
+.icon-btn {
+    width: 32px; height: 32px; flex: none;
+    border-radius: 9px; border: 1px solid var(--border); background: var(--card);
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 20px; line-height: 1; cursor: pointer; text-decoration: none;
+    cursor: pointer; color: var(--text);
 }
-.meal-card__add:hover { text-decoration: none; }
+.icon-btn:hover { background: var(--surface); color: var(--text); }
+.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn.danger, .icon-btn.danger:hover { color: var(--danger); }
 
-/* Entry row — a native <details>, so the edit / delete icons reveal on tap
-   without JavaScript rather than sitting there as permanent text links. */
-.entry { border-top: 1px solid var(--border); }
-.entry__row { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; list-style: none; }
-.entry__row::-webkit-details-marker { display: none; }
-.entry__body { flex: 1; min-width: 0; }
-.entry__name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.entry__meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
-.entry__grams { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-.entry__kcal { font-size: 14px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.entry__actions { display: flex; justify-content: flex-end; gap: 6px; padding: 0 0 10px; }
+/* --- Cards & common --------------------------------------------------------- */
 
-/* Empty state — the first thing a new user sees */
-.empty { text-align: center; padding: 44px 16px; }
-.empty__icon { width: 40px; height: 40px; color: var(--muted); display: block; margin: 0 auto 14px; }
-.empty__title { font-weight: 800; font-size: 18px; margin-bottom: 6px; }
-.empty__body { color: var(--text-muted); max-width: 34ch; margin: 0 auto 18px; }
-.empty__actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; }
+.card.dim { opacity: 0.5; }              /* the goal card, when the goal is off */
 
-/* --- Charts (hand-rolled SVG) --------------------------------------------- */
+.eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.eyebrow.teal { color: var(--primary); }
+.eyebrow.muted { color: var(--text-muted); }
+
+/* Source badges (hard rule 2). Verified is a teal-tint pill with a check; USDA
+   carries its own amber identity, which is a source colour and NOT a warning; an
+   estimate is a dashed grey ≈ — lighter, never alarming. */
+.chip {
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    font-size: 11px; font-weight: 700; color: var(--primary);
+    background: var(--primary-tint); padding: 2px 8px; border-radius: 20px;
+}
+.chip.usda { color: var(--usda-fg); background: var(--usda-bg); }
+.dash {
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    border: 1px dashed #c7cfcf; padding: 2px 8px; border-radius: 20px;
+}
+
+/* Fields. In the build `.field` is the control itself, with `.flabel` above it
+   and `.fhint` below — not a wrapper. */
+.field {
+    width: 100%; min-width: 0;
+    border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+    font-size: 14px; outline: none; background: var(--card); color: var(--text);
+}
+.field:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+select.field { cursor: pointer; }
+.flabel { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+.flabel .opt { color: #a9b3b3; }
+.fhint { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 6px; }
+.actions-end { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+.two { display: flex; gap: 12px; flex-wrap: wrap; }
+.two > div { flex: 1; min-width: 160px; }
+.vform { display: flex; flex-direction: column; gap: 16px; }
+.narrow { max-width: 720px; }
+.narrow520 { max-width: 520px; margin: 0 auto; }
+.narrow560 { max-width: 560px; }
+.narrow600 { max-width: 600px; }
+
+.divider { display: flex; align-items: center; gap: 10px; }
+.divider div { flex: 1; height: 1px; background: var(--border); }
+.divider span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+.note { display: flex; align-items: center; gap: 8px; background: var(--primary-tint); border-radius: 12px; padding: 10px 12px; }
+.note .ok { font-size: 12px; font-weight: 800; color: var(--primary); }
+.note span { font-size: 12px; color: #3d4a4b; font-weight: 600; }
+
+/* --- Day -------------------------------------------------------------------- */
+
+.day { display: flex; gap: 16px; align-items: flex-start; }
+.day-meals { flex: 1; min-width: 0; }
+.meals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.meal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; min-width: 0; }
+.meal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.meal-title { font-size: 16px; font-weight: 800; }
+.meal-kcal { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-left: 8px; white-space: nowrap; }
+.add {
+    width: 30px; height: 30px; flex: none; border-radius: 50%;
+    background: var(--primary-tint); color: var(--primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1; cursor: pointer;
+}
+.add:hover { color: var(--primary); }
+
+/* A record row. The build swaps the kcal for the edit/delete icons on tap, in
+   JavaScript; here the row is a native <details>, so the same reveal works with
+   JavaScript off. The actions are positioned over the number's place, which is
+   where the build puts them, and the number is hidden while they show. */
+.rec { border-top: 1px solid var(--border); position: relative; }
+.rec-btn { display: flex; align-items: center; gap: 10px; padding: 10px 0; width: 100%; text-align: left; cursor: pointer; list-style: none; }
+.rec-btn::-webkit-details-marker { display: none; }
+.rec-main { flex: 1; min-width: 0; }
+.rec-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+.rec-g { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.rec-k { font-size: 14px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.rec[open] .rec-k { visibility: hidden; }
+.rec-actions { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; }
+
+.ring-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 22px; width: 320px; flex-shrink: 0; position: sticky; top: 0;
+}
+.rc { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ring-box { position: relative; width: 150px; height: 150px; margin-bottom: 8px; }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ring-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.ring-total { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.ring-plain { padding: 16px 0 6px; }
+.ring-eaten { font-size: 46px; font-weight: 800; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+.macros { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.macro { border-radius: 14px; padding: 12px 14px; }
+.macro.p { background: var(--mint); }
+.macro.f { background: var(--blue); }
+.macro.c { background: var(--primary-tint); }
+.mrow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.mrow b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.mbar { height: 5px; background: #fff; border-radius: 3px; margin-top: 8px; }
+.mbar > div { height: 100%; background: var(--primary); border-radius: 3px; }
+
+.day-estimates { margin-top: 14px; }
+
+/* --- Empty ------------------------------------------------------------------ */
+
+.empty { padding: 80px 6px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.empty-tile {
+    width: 84px; height: 84px; border-radius: 24px; background: var(--primary-tint);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; color: var(--primary);
+}
+.empty-tile svg { width: 38px; height: 38px; }
+.empty h3 { font-size: 19px; font-weight: 800; }
+.empty p { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 8px; max-width: 360px; line-height: 1.5; }
+.empty-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+
+/* --- Segmented / grids ------------------------------------------------------ */
+
+.seg { display: inline-flex; gap: 6px; background: var(--card); border: 1px solid var(--border); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+.seg button, .seg a {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 18px; border: none; border-radius: 9px; background: none;
+    color: var(--text-muted); font-weight: 600; font-size: 13px; cursor: pointer;
+}
+.seg button.on, .seg a.on { background: var(--primary-tint); color: var(--primary); font-weight: 700; }
+.seg a:hover { color: var(--text-muted); }
+.seg a.on:hover { color: var(--primary); }
+
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.stat .l { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.stat .v { font-size: 24px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.chart-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.chart-title span:first-child { font-size: 14px; font-weight: 800; }
+.chart-title span:last-child { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+
+/* --- Weight ----------------------------------------------------------------- */
+
+.weight { display: flex; gap: 16px; align-items: flex-start; }
+.weight-col { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+.weight-chart { flex: 1; min-width: 0; }
+.wnew-row { display: flex; gap: 10px; }
+.wnew-val { flex: 1; background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; align-items: baseline; gap: 4px; }
+.wnew-val b { font-size: 22px; font-weight: 800; }
+.wnew-val span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.wlog { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 6px 18px; }
+.wlog-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.wlog-row:last-child { border-bottom: none; }
+.wlog-row .d { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.wlog-row .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- Library ---------------------------------------------------------------- */
+
+.lib-search { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.searchbox { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.searchbox svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
+.searchbox input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font-size: 14px; color: var(--text); }
+.searchbox input::placeholder { color: var(--muted); font-weight: 600; }
+.prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.prod { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; text-align: left; width: 100%; }
+.prod .t { font-size: 15px; font-weight: 700; color: var(--text); }
+.prod .m { display: flex; gap: 8px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+.prod .k { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+/* --- Settings --------------------------------------------------------------- */
+
+.settings { max-width: 560px; display: flex; flex-direction: column; gap: 16px; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.set-row .t { font-size: 15px; font-weight: 700; }
+.set-row .s { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+
+/* The switch is a real checkbox, so it submits with the form and toggles without
+   JavaScript; the build's version is a button driven by its own state. */
+.switch-field { display: inline-flex; flex-shrink: 0; cursor: pointer; }
+.switch-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.switch { display: block; width: 50px; height: 30px; border-radius: 15px; padding: 3px; background: var(--control-off); flex-shrink: 0; }
+.switch > span { display: block; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.18s; transform: translateX(0); }
+.switch-input:checked + .switch { background: var(--primary); }
+.switch-input:checked + .switch > span { transform: translateX(20px); }
+.switch-input:focus-visible + .switch { outline: 2px solid var(--primary); outline-offset: 2px; }
+.switch.sm { width: 44px; height: 26px; }
+.switch.sm > span { width: 20px; height: 20px; }
+.switch-input:checked + .switch.sm > span { transform: translateX(18px); }
+
+.stepper { display: flex; align-items: center; gap: 16px; }
+.step-btn { width: 38px; height: 38px; flex: none; border-radius: 10px; border: 1px solid var(--border); background: var(--card); font-size: 20px; cursor: pointer; color: var(--text); }
+.step-num { font-size: 28px; font-weight: 800; }
+.step-num input { width: 110px; border: 0; padding: 0; background: none; font-size: 28px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.step-num small { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-left: 4px; }
+.macro-goal { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface); border-radius: 12px; padding: 10px 12px; }
+.macro-goal .l { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.mg-ctl { display: flex; align-items: center; gap: 10px; }
+.mg-btn { width: 30px; height: 30px; flex: none; border-radius: 9px; border: 1px solid var(--control-off); background: var(--card); font-size: 17px; line-height: 1; color: var(--text); cursor: pointer; }
+.mg-val { font-size: 15px; font-weight: 800; min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.mg-val input { width: 46px; border: 0; padding: 0; background: none; text-align: center; font-size: 15px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.lang { display: flex; gap: 4px; background: var(--surface); padding: 3px; border-radius: 10px; }
+.lang button { padding: 6px 16px; border: 0; border-radius: 8px; background: none; font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; }
+.lang button.on { background: var(--card); font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); color: var(--text); }
+.meal-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); margin-top: 6px; }
+.meal-toggle .t { font-size: 14px; font-weight: 700; }
+.meal-toggle.off .t { color: var(--muted); }
+
+/* --- Confirm ---------------------------------------------------------------- */
+
+.conf-lead { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px; line-height: 1.55; }
+.conf-meta { display: flex; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.conf-meta > div { flex: 1; min-width: 200px; }
+.conf-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-top: 16px; }
+.conf-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.conf-head .t { font-size: 16px; font-weight: 800; }
+.portion { display: flex; align-items: center; gap: 8px; }
+.portion input { width: 80px; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 14px; outline: none; text-align: center; }
+.zero-note { background: var(--surface); border-radius: 12px; padding: 10px 14px; margin-top: 12px; font-size: 12px; color: #5b6768; font-weight: 600; line-height: 1.5; }
+.cand-headrow { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 8px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.cand-list { display: flex; flex-direction: column; gap: 8px; }
+.crow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border-radius: 12px; padding: 11px 14px; cursor: pointer; border: 1px solid var(--border); background: var(--card); }
+/* The selected state comes from the radio itself, so the choice survives a page
+   render and needs no script. */
+.crow input[type='radio'] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.crow:has(input:checked) { border-color: var(--primary); background: #f0f7f5; }
+.crow:focus-within { border-color: var(--primary); }
+.cring { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 2px solid #c7cfcf; }
+.crow:has(input:checked) .cring { border-color: var(--primary); }
+.cring > span { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); opacity: 0; }
+.crow:has(input:checked) .cring > span { opacity: 1; }
+.cthumb { width: 36px; height: 36px; border-radius: 9px; overflow: hidden; background: var(--surface); flex-shrink: 0; }
+.cthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cbody { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cbody .n { font-size: 14px; font-weight: 600; }
+.cline { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.record-hint { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: auto; }
+.manual-fields { padding: 8px 4px 2px; }
+
+/* --- Scan ------------------------------------------------------------------- */
+
+.scan { max-width: 520px; margin: 0 auto; }
+.scan-view { position: relative; background: #0f1a1a; border-radius: 20px; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.scan-frame { position: absolute; width: 70%; height: 130px; }
+.scan-frame span { position: absolute; width: 26px; height: 26px; }
+.scan-line { position: absolute; width: 70%; height: 2px; background: #8fd0c4; box-shadow: 0 0 12px #8fd0c4; }
+.scan-hint { font-size: 13px; color: var(--text-muted); font-weight: 600; text-align: center; margin: 16px 0 14px; }
+
+/* --- Product / recipe forms -------------------------------------------------- */
+
+.nutri-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+.nutri { background: var(--surface); border-radius: 12px; padding: 12px; text-align: center; }
+.nutri .l { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.nutri .v { font-size: 16px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.nutri-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+.ing-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
+.ing { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.ing:last-child { border-bottom: none; }
+.ing .n { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+.ing .g { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.ing .k { font-size: 13px; font-weight: 700; width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+.ing-del { width: 28px; height: 28px; flex: none; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--danger); cursor: pointer; background: var(--card); }
+.add-dashed { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 16px; border-radius: 10px; border: 1px dashed #c7cfcf; background: var(--card); color: var(--primary); font-weight: 700; font-size: 13px; cursor: pointer; }
+.total-bar { display: flex; align-items: center; justify-content: space-between; background: var(--primary-tint); border-radius: 12px; padding: 14px 16px; flex-wrap: wrap; gap: 6px; }
+.total-bar .l { font-size: 13px; color: #3d4a4b; font-weight: 600; }
+.total-bar .v { font-size: 16px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+
+/* --- Single-purpose gate ----------------------------------------------------
+   The unlock screen. Sign-in / registration / reset are v0.3.0 and not built. */
+
+.auth { max-width: 380px; margin: 20px auto 0; }
+.auth-icon { width: 60px; height: 60px; border-radius: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 22px; background: var(--primary-tint); color: var(--primary); }
+.auth h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.auth .field { margin-bottom: 16px; }
+
+/* --- Tab bar / FAB (mobile) --------------------------------------------------
+   Both sit inside the fixed frame, so they never scroll away. The safe-area
+   inset keeps them clear of the home indicator on a phone. */
+
+.tabbar { display: none; flex-shrink: 0; height: var(--tabbar-h); background: var(--card); border-top: 1px solid var(--border); padding: 8px 6px 16px; }
+.tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-weight: 700; }
+.tabbar a.on, .tabbar a.on:hover { color: var(--primary); }
+.tabbar a:hover { color: var(--muted); }
+.tabbar svg { width: 24px; height: 24px; }
+.tabbar span { font-size: 10px; font-weight: 700; }
+
+/* <details> instead of the build's JS toggle: the menu opens with JavaScript
+   off. column-reverse puts the menu above the button while <summary> stays the
+   first child, as the element requires. */
+.fab-wrap { display: none; position: absolute; right: 18px; bottom: 92px; flex-direction: column-reverse; align-items: flex-end; gap: 10px; z-index: 5; }
+.fab-menu { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.fab-action { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: 24px; border: none; background: var(--card); color: var(--text); font-weight: 700; font-size: 13px; box-shadow: var(--shadow-float); cursor: pointer; }
+.fab-action:hover { color: var(--text); }
+.fab-action svg { width: 16px; height: 16px; flex: none; color: var(--primary); }
+.fab { width: 60px; height: 60px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-fab); cursor: pointer; list-style: none; }
+.fab::-webkit-details-marker { display: none; }
+.fab svg { width: 28px; height: 28px; color: #fff; transition: transform 0.15s ease; }
+.fab-wrap[open] .fab svg { transform: rotate(45deg); }
+
+/* --- Modal -------------------------------------------------------------------
+   A native <dialog>: Esc closes it without a line of script, and the backdrop
+   is the browser's. On a phone it becomes a bottom sheet, as in the build. */
+
+.modal { width: 460px; max-width: calc(100% - 32px); max-height: 90%; overflow-y: auto; padding: 0; border: 0; border-radius: 20px; background: var(--card); color: var(--text); box-shadow: var(--shadow-modal); }
+.modal::backdrop { background: rgba(20, 30, 30, 0.4); }
+.modal-head { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; background: var(--card); }
+.modal-head .t { font-size: 17px; font-weight: 800; }
+.modal-close { width: 32px; height: 32px; flex: none; border-radius: 50%; border: none; background: var(--surface); font-size: 19px; line-height: 1; cursor: pointer; color: #5b6768; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* --- Charts (hand-rolled SVG) ------------------------------------------------ */
 
 .chart { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; }
 /* One soft tone for every bar whatever the value — over the goal never reddens
    (hard rule 4). The goal is a dashed teal reference that judges nothing. */
 .chart__bar { fill: #cfe0dd; }
-.chart__bar--empty { fill: var(--border); }        /* a day with no entries: zero, drawn, not skipped */
+.chart__bar--empty { fill: var(--border); }
 .chart__goal { stroke: var(--primary); stroke-width: 1.6; stroke-dasharray: 6 6; fill: none; opacity: 0.8; }
 .chart__line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .chart__dot { fill: #fff; stroke: var(--primary); stroke-width: 2.6; }
 .chart__axis { fill: var(--muted); font-size: 11px; font-weight: 600; }
 .chart__grid { stroke: #eef1f1; stroke-width: 1; }
 
-/* Macro split — a neutral proportion bar, teal family only, never a verdict. */
-.macro { display: flex; height: 12px; border-radius: 6px; overflow: hidden; }
-.macro__seg--p { background: var(--primary); }
-.macro__seg--f { background: #4f8a86; }
-.macro__seg--c { background: #a9cbc7; }
-.macro__legend { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+/* Macro split — a neutral proportion bar, teal family only, never a verdict.
+   Named `split` because `.macro` is the day summary's macro card. */
+.split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; }
+.split-p { background: var(--primary); }
+.split-f { background: #4f8a86; }
+.split-c { background: #a9cbc7; }
+.split-legend { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 
-/* --- Confirm screen -------------------------------------------------------- */
+/* --- Provenance in running text ---------------------------------------------
+   Where a chip would be too heavy — the day's "some entries are estimates" note. */
 
-.confirm-dish__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.confirm-dish__name { font-weight: 800; font-size: 16px; }
-.confirm-dish__portion { width: 120px; flex: none; margin-bottom: 0; }
+.prov { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+.prov--verified { color: var(--primary); }
+.prov--estimate { color: var(--text-muted); font-weight: 400; }
 
-.sources { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.source { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-md); cursor: pointer; }
-.source input[type='radio'] { width: auto; min-height: 0; margin-top: 3px; flex: none; }
-.source__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.source__name { font-weight: 600; }
-.source__thumb { width: 44px; height: 44px; border-radius: var(--r-sm); object-fit: cover; align-self: flex-start; background: var(--surface); }
-.source:has(input:checked) { border-color: var(--primary); background: var(--primary-tint); }
-.source--skip { color: var(--text-muted); }
+/* --- Flash, errors, pagination ------------------------------------------------ */
 
-.manual-fields { padding: 8px 0 2px; }
+.notice { background: var(--primary-tint); color: var(--primary-dark); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-weight: 600; font-size: 14px; }
+.errors { background: #f6f0e8; border: 1px solid #e4d6c0; color: #6b5836; border-radius: 12px; padding: 10px 14px 10px 16px; margin: 0 0 14px; font-size: 14px; }
+.errors ul { margin: 0; padding-left: 18px; }
+.field-error { color: #8a6d3b; font-size: 12px; margin-top: 4px; }
+.pagination { margin-top: 18px; font-size: 14px; }
 
-/* --- Dialog (manual entry) ------------------------------------------------- */
+/* --- Date stepper (day screen) ------------------------------------------------ */
 
-.dialog {
-    border: 0; padding: 0; border-radius: var(--r-lg);
-    width: calc(100% - 32px); max-width: 460px;
-    background: var(--card); color: var(--text);
+.datestep { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.datestep a, .datestep span { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; font-weight: 700; }
+.datestep__label { font-size: 16px; }
+
+/* --- Responsive --------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+    .side { display: none; }
+    .day-actions { display: none; }
+    .tabbar { display: flex; }
+    .day { flex-direction: column; }
+    .day-meals { width: 100%; order: 2; }
+    .ring-card { width: 100%; order: 1; position: static; }
+    .weight { flex-direction: column; }
+    .weight-col { width: 100%; }
+    .weight-chart { width: 100%; }
+    .content { padding: 18px 16px 20px; }
+    .settings { max-width: none; }
+    .fab-wrap.show { display: flex; }
+    .nutri-grid { grid-template-columns: repeat(2, 1fr); }
+    .modal { width: 100%; max-width: 100%; max-height: 90%; margin: auto auto 0; border-radius: 24px 24px 0 0; }
 }
-.dialog::backdrop { background: rgba(24, 34, 35, 0.45); }
-.dialog__panel { padding: 20px; }
-.dialog__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.dialog__head h2 { font-size: 17px; }
-.dialog__close { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
 
-/* ==========================================================================
-   Kit components (design/prototype_v6/components) — presentational primitives
-   the screens compose from. Behaviour stays in the existing forms and JS; these
-   only carry the look. Matched by role to the kit's inline styles.
-   ========================================================================== */
-
-/* IconButton — compact square icon-only action (edit / delete on records). */
-.icon-btn {
-    width: 32px; height: 32px; flex: none; border-radius: var(--r-9);
-    background: #fff; border: 1px solid var(--border); color: var(--text);
-    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+/* Keep the tab bar and the FAB clear of the home indicator. */
+@supports (padding: env(safe-area-inset-bottom)) {
+    @media (max-width: 899px) {
+        .tabbar { height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+        .fab-wrap { bottom: calc(92px + env(safe-area-inset-bottom)); }
+    }
 }
-.icon-btn svg { width: 18px; height: 18px; }
-.icon-btn--danger { color: var(--danger); }
-.icon-btn--accent { color: var(--primary); }
-.icon-btn:hover { background: var(--surface); text-decoration: none; }
 
-/* SourceChip — the provenance trust signal. Verified = solid teal-tint pill with
-   a check; USDA = amber identity (not a warning); estimate = dashed grey ≈. */
-.source-chip {
-    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
-    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--r-pill);
-    color: var(--off-fg); background: var(--off-bg);
+@media (min-width: 900px) {
+    .fab-wrap { display: none !important; }
 }
-.source-chip--usda { color: var(--usda-fg); background: var(--usda-bg); }
-.source-chip--estimate { color: var(--muted); background: transparent; border: 1px dashed #c7cfcf; font-weight: 600; }
-
-/* MacroRow — a macro line in the day summary, tinted by category, optional bar. */
-.macro-row { background: var(--mint); border-radius: var(--r-14); padding: 12px 14px; }
-.macro-row--fat { background: var(--blue); }
-.macro-row--carb { background: var(--primary-tint); }
-.macro-row__head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 600; color: var(--text-muted); }
-.macro-row__value { color: var(--text); font-weight: 800; }
-.macro-row__track { height: 5px; background: #fff; border-radius: 3px; margin-top: 8px; }
-.macro-row__fill { height: 100%; background: var(--primary); border-radius: 3px; }
-
-/* RingSummary — the day's calorie total. Ring never changes colour (hard rule 4);
-   with no goal it is replaced by the plain eaten number. */
-.ring-summary { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.ring-summary__ring { position: relative; width: 150px; height: 150px; margin-bottom: 8px; }
-.ring-summary__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.ring-summary__num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.ring-summary__cap { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-.ring-summary__sub { font-size: 14px; color: var(--text-muted); font-weight: 600; }
-.ring-summary__plain { padding: 16px 0 6px; }
-.ring-summary__eaten { font-size: 46px; font-weight: 800; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
-
-/* Input — labelled field (kit): 12px bold label, hairline field, muted hint. */
-.field__label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
-.field__hint { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 6px; }
-
-/* EmptyState — soft teal icon tile, title, calm explanation, optional action. */
-.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 72px 6px; }
-.empty-state__tile { width: 84px; height: 84px; border-radius: var(--r-24); background: var(--primary-tint); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
-.empty-state__tile svg { width: 40px; height: 40px; }
-.empty-state__title { font-size: 19px; font-weight: 800; }
-.empty-state__body { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 8px; max-width: 360px; line-height: 1.5; }
-.empty-state__action { margin-top: 22px; }

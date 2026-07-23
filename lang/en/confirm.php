@@ -17,6 +17,8 @@ return [
     'barcode_hint' => 'Type it once and this product matches exactly next time.',
     'no_matches' => 'No database match. Enter the label values, or use the model estimate below — it is marked as an estimate, not a verified value.',
     'matched_on' => 'matched on «:term»',
+    'match_source' => 'Match · source',
+    'choose_hint' => 'Pick a source for each dish',
     'submit' => 'Log selected',
     'manual_incomplete' => 'Fill in every value per 100 g from the label.',
     'nothing_selected' => 'Nothing was selected, so nothing was logged.',

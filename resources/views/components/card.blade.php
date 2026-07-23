@@ -1,11 +1,5 @@
-@props(['pad' => 'roomy', 'variant' => null])
+@props(['dim' => false])
 
-{{-- The base surface: white, hairline border, soft shadow. Mirrors the kit Card.
-     variant: meal (r20) | summary (r24) | dim (the goal card when off). --}}
-@php
-    $classes = 'card'
-        .($pad === 'compact' ? ' card--compact' : '')
-        .($variant ? ' card--'.$variant : '');
-@endphp
-
-<div {{ $attributes->merge(['class' => $classes]) }}>{{ $slot }}</div>
+{{-- The base surface: white, hairline border, 18px radius (design/build, .card).
+     `dim` is the goal card when no goal is set — visibly quieter, still usable. --}}
+<div {{ $attributes->merge(['class' => 'card'.($dim ? ' dim' : '')]) }}>{{ $slot }}</div>

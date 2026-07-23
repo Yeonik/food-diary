@@ -14,13 +14,13 @@
 @endphp
 
 @if ($total > 0)
-    <div class="macro" role="img"
+    <div class="split" role="img"
          aria-label="{{ __('nutrition.p') }} {{ $p }}% {{ __('nutrition.f') }} {{ $f }}% {{ __('nutrition.c') }} {{ $c }}%">
-        <div class="macro__seg--p" style="width: {{ $p }}%"></div>
-        <div class="macro__seg--f" style="width: {{ $f }}%"></div>
-        <div class="macro__seg--c" style="width: {{ $c }}%"></div>
+        <div class="split-p" style="width: {{ $p }}%"></div>
+        <div class="split-f" style="width: {{ $f }}%"></div>
+        <div class="split-c" style="width: {{ $c }}%"></div>
     </div>
-    <div class="macro__legend">
+    <div class="split-legend">
         <span>{{ __('nutrition.p') }} {{ $p }}%</span>
         <span>{{ __('nutrition.f') }} {{ $f }}%</span>
         <span>{{ __('nutrition.c') }} {{ $c }}%</span>

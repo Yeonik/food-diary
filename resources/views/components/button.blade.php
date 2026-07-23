@@ -1,18 +1,15 @@
 @props([
     'variant' => 'primary',   // primary | secondary | ghost | danger
-    'size' => 'md',           // sm | md | lg
     'full' => false,
     'icon' => null,           // optional leading icon name
     'href' => null,           // renders an <a> when set, a <button> otherwise
     'type' => 'submit',
 ])
 
-{{-- CTA and secondary actions. Mirrors the kit Button. --}}
+{{-- CTA and secondary actions (design/build/app.css, .btn). --}}
 @php
-    $classes = 'btn'
-        .($variant !== 'primary' ? ' btn--'.$variant : '')
-        .($size !== 'md' ? ' btn--'.$size : '')
-        .($full ? ' btn--block' : '');
+    $suffix = ['primary' => 'p', 'secondary' => 's', 'ghost' => 'g', 'danger' => 'd'][$variant] ?? 'p';
+    $classes = 'btn btn-'.$suffix.($full ? ' btn-block' : '');
 @endphp
 
 @if ($href)

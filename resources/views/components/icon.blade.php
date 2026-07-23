@@ -1,8 +1,8 @@
-@props(['name'])
+@props(['name', 'stroke' => '1.8'])
 
-{{-- Inline SVG icons, one unified set transcribed from the approved prototype
-     (design/prototype_v5). Stroked in currentColor at 1.8, 24×24 box, rounded.
-     No icon font, no sprite fetch. --}}
+{{-- Inline SVG icons, one unified set. The paths are the ones in
+     design/build/index.html, transcribed as they are — 24×24 box, stroked in
+     currentColor, rounded joins. No icon font, no sprite fetch. --}}
 @php
     $paths = [
         // Primary navigation (also reused, larger and tinted, in empty states).
@@ -19,11 +19,13 @@
         'manual' => '<path d="M4 20h4L18 10l-4-4L4 16v4z"/><path d="M13 5l4 4"/>',
         'edit' => '<path d="M4 20h4L18 10l-4-4L4 16v4z"/><path d="M13 5l4 4"/>',
         'delete' => '<path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/>',
+        'search' => '<circle cx="11" cy="11" r="7"/><path d="M16.2 16.2L21 21"/>',
+        'lock' => '<rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.6" fill="currentColor"/>',
         'utensils' => '<path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-3 4.5V15a2 2 0 0 0 4 0Z"/>',
     ];
 @endphp
 
 <svg {{ $attributes->merge(['aria-hidden' => 'true']) }} viewBox="0 0 24 24" fill="none"
-     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+     stroke="currentColor" stroke-width="{{ $stroke }}" stroke-linecap="round" stroke-linejoin="round">
     {!! $paths[$name] ?? '' !!}
 </svg>

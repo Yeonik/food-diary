@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'edit' => 'Edit',
     'delete' => 'Delete',
+    'back' => 'Back',
     'cancel' => 'Cancel',
     'add' => 'Add',
     'save' => 'Save',
