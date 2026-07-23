@@ -272,8 +272,18 @@ class RecordOwnershipTest extends TestCase
     {
         // A table added later that holds a person's data and is not listed above
         // would otherwise be scoped by nobody and noticed by no one.
+        //
+        // `invites` is listed here rather than among the domain tables, and the
+        // distinction is the point: it is not one person's data kept apart from
+        // another's, it is the owner's record of who may join. It carries no
+        // user_id to scope by and is reached only through the owner's own
+        // screens, behind the owner's authorisation — never through a query
+        // made on behalf of whoever is signed in.
+        $ownerAdministered = ['invites'];
+
         $known = array_merge(
             array_map(fn (array $case): string => $case[0], array_values(self::domainTables())),
+            $ownerAdministered,
             ['users', 'password_reset_tokens', 'sessions', 'cache', 'cache_locks',
                 'jobs', 'job_batches', 'failed_jobs', 'migrations'],
         );

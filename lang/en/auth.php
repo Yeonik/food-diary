@@ -17,6 +17,12 @@ return [
     'password_hint' => 'At least 8 characters',
     'remember' => 'Stay signed in',
 
+    'invite_code' => 'Invite code',
+    'invite_hint' => 'Registration is by invitation only',
+    // Unknown, expired and already used all say this — the refusal does not
+    // tell a stranger which of their guesses named a real invitation.
+    'invite_invalid' => 'That invite code cannot be used.',
+
     'account' => 'Account',
     'logout' => 'Sign out',
     'change_password' => 'Change password',
