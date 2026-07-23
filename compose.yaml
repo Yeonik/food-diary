@@ -23,10 +23,12 @@ services:
       # default when unset.
       GEMINI_MODEL: ${GEMINI_MODEL:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
-      # Optional access password. A bcrypt hash contains `$`, which compose
-      # interpolation treats specially — so in .env each `$` is doubled to `$$`
-      # and compose restores it to a single `$` here.
-      APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}
+      # The owner's account, created the first time migrations run. Without an
+      # address the migration refuses before it writes anything, so `up` fails
+      # loudly rather than leaving an instance nobody can sign in to.
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-}
+      OWNER_NAME: ${OWNER_NAME:-}
     volumes:
       # Persist the database and uploaded photos across restarts.
       - storage:/app/storage

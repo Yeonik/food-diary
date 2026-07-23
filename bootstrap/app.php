@@ -21,8 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // `at: '*'` — trust ANY forwarding proxy — is safe ONLY because on
         // Railway the app cannot be reached except through Railway's own proxy,
         // so a client cannot forge X-Forwarded-For. That header feeds the
-        // per-IP unlock throttle: if the app ever became reachable directly
-        // (a different host, a misconfigured network), a spoofed X-Forwarded-For
+        // per-IP half of the sign-in throttle: if the app ever became reachable
+        // directly (a different host, a misconfigured network), a spoofed
+        // X-Forwarded-For
         // would give every request a fresh apparent IP and silently zero out the
         // rate limiter — with no error to notice. Revisit this line on any
         // hosting change; do not carry '*' to somewhere the proxy is not the

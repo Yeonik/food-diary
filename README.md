@@ -140,9 +140,16 @@ What is deliberately **off**, and why:
 
 - **Password reset by email.** This instance has no deliverable mail configured,
   and a reset screen that promises a link which lands in a log file is worse than
-  no screen at all. Until mail exists, **a forgotten password is reset by the
-  owner** with an artisan command. The route does not exist, so there is nothing
-  to click and be disappointed by.
+  no screen at all. Until mail exists, a forgotten password is reset from a shell
+  on the machine:
+
+  ```bash
+  php artisan diary:set-password someone@example.com
+  ```
+
+  It asks for the password rather than taking it as an argument, so it stays out
+  of the shell history and the process list. The reset route does not exist at
+  all, so there is nothing to click and be disappointed by.
 - **Two-factor and passkeys.** Not offered. `laravel/passkeys` is installed
   anyway — Fortify 1.37 requires it — so it is dormant by decision rather than by
   accident: with the features off Fortify registers none of their routes, and
@@ -356,6 +363,8 @@ off the machine as well.
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
 | `APP_URL` | `https://<your-app>.up.railway.app` |
+| `OWNER_EMAIL` | the owner's address — **required on the first deploy** |
+| `OWNER_PASSWORD` | the owner's first password; delete it after signing in |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `DB_CONNECTION` | `sqlite` |
 | `DB_DATABASE` | `/app/storage/app/food-diary.sqlite` (must match the volume) |
@@ -369,6 +378,15 @@ off the machine as well.
 
 `APP_KEY` must be a fixed value you set once — not regenerated per deploy, or
 every session breaks on each release.
+
+**The first deploy needs an owner.** There is no sign-up without an invite and no
+invite without somebody to issue one, so the owner's account is created by
+migration from `OWNER_EMAIL` and `OWNER_PASSWORD`. If `OWNER_EMAIL` is missing
+the migration **refuses before writing anything** — the deploy fails, Railway
+keeps the previous release serving, and the database is exactly as it was. Sign
+in, change the password in the app, then delete `OWNER_PASSWORD` from the
+variables; migrations never rewrite an account that already exists, so a stale
+variable cannot undo that change.
 
 **Health check.** The app exposes `/up` (returns 200, and it is the one path
 that needs no account). Point Railway's health check path at `/up` if you enable

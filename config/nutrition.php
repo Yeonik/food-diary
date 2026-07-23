@@ -4,6 +4,24 @@ declare(strict_types=1);
 
 return [
 
+    /*
+    | The owner's account, created once by migration on the deploy that removes
+    | the old password gate. Without an address the migration refuses before it
+    | writes anything, so a deploy that forgot to set it fails and leaves the
+    | database untouched rather than producing an instance nobody can enter.
+    |
+    | Set both on the platform before that deploy; remove OWNER_PASSWORD after
+    | the first sign-in. Re-running migrations never rewrites an existing
+    | account, so a password changed in the app is not reset by a stale variable.
+    */
+    'owner' => [
+        'email' => env('OWNER_EMAIL'),
+        // Secret: read from the environment only, never hard-coded, and never
+        // interpolated into a message or a log line.
+        'password' => env('OWNER_PASSWORD'),
+        'name' => env('OWNER_NAME'),
+    ],
+
     // There is deliberately no "fake recogniser" runtime switch. The fake is a
     // test double, bound only in the test environment; the running app always
     // uses the real recogniser and fails loudly without a key.
