@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\DiaryController;
 use App\Http\Controllers\FoodItemController;
@@ -74,6 +75,10 @@ Route::middleware('auth')->group(function (): void {
     // Goal
     Route::get('/goal', [GoalController::class, 'edit'])->name('goal.edit');
     Route::patch('/goal', [GoalController::class, 'update'])->name('goal.update');
+
+    // Leaving. Behind the same `auth` group as everything else — a session is
+    // what says whose account this is.
+    Route::delete('/account', [AccountController::class, 'destroy'])->name('account.destroy');
 
     // Invitations — the owner's, and only the owner's. The gate wraps the group
     // rather than each route, for the same reason `auth` wraps everything above:

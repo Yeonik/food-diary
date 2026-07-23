@@ -102,6 +102,23 @@
             </form>
         </x-card>
 
+        {{-- Leaving. Plain, and last on the screen: it asks for the password
+             because it cannot be undone, not because it is discouraged. --}}
+        @unless (auth()->user()?->isOwner())
+            <x-card style="margin-bottom:16px">
+                <form method="post" action="{{ route('account.destroy') }}">
+                    @csrf @method('DELETE')
+                    <div class="flabel" style="margin-bottom:6px">{{ __('account.delete') }}</div>
+                    <p class="s" style="margin-bottom:12px">{{ __('account.delete_explain') }}</p>
+
+                    <x-field type="password" name="current_password" :label="__('auth.current_password')"
+                             autocomplete="current-password" required />
+
+                    <x-button variant="danger" type="submit">{{ __('account.delete_submit') }}</x-button>
+                </form>
+            </x-card>
+        @endunless
+
         {{-- Only the owner has anywhere to go from here, and only the owner sees
              it. The link is a convenience; the gate on the route is the rule. --}}
         @can(\App\Providers\AppServiceProvider::ADMINISTER_INVITES)
