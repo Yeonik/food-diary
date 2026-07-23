@@ -4,24 +4,110 @@
 // the number inputs are directly editable and the form submits on its own; this
 // file just adds the stepper buttons and the live goal-card dimming.
 
-// Stepper buttons adjust a number input, clamped to its min/max.
-document.addEventListener('click', function (event) {
-    const button = event.target.closest('[data-step-target]');
-    if (!button) {
-        return;
-    }
+// Stepper buttons adjust a number input, clamped to its min/max, and keep going
+// while one is held down — 2000 kcal is a long way from 1200 one tap at a time.
+const STEP_HOLD_DELAY = 420;   // ms of holding before the repeat starts at all
+const STEP_REPEAT_FROM = 240;  // the first repeats are this far apart
+const STEP_REPEAT_TO = 55;     // and they tighten to this and no further
+const STEP_RAMP = 0.82;        // each repeat waits this fraction of the last
 
+// Where pointer events exist the pointer path steps on pointerdown, so the click
+// that follows a tap must not step again. Keyboard activation fires a click with
+// no pointerdown before it, and the browser marks those with detail 0.
+const HAS_POINTER = 'PointerEvent' in window;
+
+let stepTimer = null;
+let stepButton = null;
+
+/** One step. Returns false when the input is already against its limit. */
+function applyStep(button) {
     const input = document.getElementById(button.dataset.stepTarget);
     if (!input) {
-        return;
+        return false;
     }
 
     const delta = Number(button.dataset.stepDelta || 0);
     const min = input.min !== '' ? Number(input.min) : -Infinity;
     const max = input.max !== '' ? Number(input.max) : Infinity;
     const current = Number(input.value || 0);
+    const next = Math.min(max, Math.max(min, current + delta));
 
-    input.value = String(Math.min(max, Math.max(min, current + delta)));
+    if (next === current) {
+        return false;
+    }
+
+    input.value = String(next);
+
+    return true;
+}
+
+function stopStepRepeat() {
+    if (stepTimer !== null) {
+        clearTimeout(stepTimer);
+        stepTimer = null;
+    }
+
+    if (stepButton) {
+        stepButton.removeEventListener('pointerup', stopStepRepeat);
+        stepButton.removeEventListener('pointerleave', stopStepRepeat);
+        stepButton.removeEventListener('pointercancel', stopStepRepeat);
+        stepButton = null;
+    }
+
+    document.removeEventListener('pointerup', stopStepRepeat);
+    document.removeEventListener('pointercancel', stopStepRepeat);
+}
+
+function scheduleStepRepeat(button, wait) {
+    stepTimer = setTimeout(function () {
+        // Against min or max there is nothing left to repeat towards, so the
+        // hold ends itself rather than spinning on an unchanging number.
+        if (!applyStep(button)) {
+            stopStepRepeat();
+
+            return;
+        }
+
+        scheduleStepRepeat(button, Math.max(STEP_REPEAT_TO, wait * STEP_RAMP));
+    }, wait);
+}
+
+document.addEventListener('pointerdown', function (event) {
+    const button = event.target.closest('[data-step-target]');
+    if (!button || !event.isPrimary || event.button !== 0) {
+        return;
+    }
+
+    applyStep(button);
+    stopStepRepeat();
+    stepButton = button;
+
+    // A mouse leaving the button cancels the hold. A touch does not report
+    // leaving — the browser captures the pointer to the element it started on —
+    // so a finger sliding off keeps counting and stops when it lifts, which is
+    // the kinder reading of the gesture anyway.
+    button.addEventListener('pointerup', stopStepRepeat);
+    button.addEventListener('pointerleave', stopStepRepeat);
+    button.addEventListener('pointercancel', stopStepRepeat);
+    // Released or interrupted anywhere else: the last word on stopping.
+    document.addEventListener('pointerup', stopStepRepeat);
+    document.addEventListener('pointercancel', stopStepRepeat);
+
+    scheduleStepRepeat(button, STEP_HOLD_DELAY);
+});
+
+document.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-step-target]');
+    if (!button) {
+        return;
+    }
+
+    // Already stepped on pointerdown; this click is the tail of that same tap.
+    if (HAS_POINTER && event.detail !== 0) {
+        return;
+    }
+
+    applyStep(button);
 });
 
 // The goal switch dims its card live, matching what the server renders for the

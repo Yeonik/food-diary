@@ -113,6 +113,15 @@ a { color: var(--primary); font-weight: 700; text-decoration: none; }
 a:hover { color: var(--primary-dark); }
 button, input, select, textarea { font-family: inherit; }
 
+/* Double-tapping a control zoomed the page instead of pressing it twice — the
+   stepper buttons are the obvious victim. `manipulation` drops the double-tap
+   gesture on controls only; panning and pinch both survive, and body text keeps
+   its double-tap zoom.
+   The viewport meta is deliberately left alone: user-scalable=no and a capped
+   maximum-scale would take pinch away from everyone, which is not a trade this
+   app makes for a tap delay. */
+a, button, summary, label, input, select, textarea { touch-action: manipulation; }
+
 h1, h2, h3 { font-weight: 800; line-height: 1.2; }
 
 .muted { color: var(--text-muted); }
@@ -412,6 +421,10 @@ select.field { cursor: pointer; }
 .switch.sm { width: 44px; height: 26px; }
 .switch.sm > span { width: 20px; height: 20px; }
 .switch-input:checked + .switch.sm > span { transform: translateX(18px); }
+
+/* The two stepper buttons repeat while held (public/js/app.js), so a long press
+   on them must not start a text selection or an iOS callout instead. */
+.step-btn, .mg-btn { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
 .stepper { display: flex; align-items: center; gap: 16px; }
 .step-btn { width: 38px; height: 38px; flex: none; border-radius: 10px; border: 1px solid var(--border); background: var(--card); font-size: 20px; cursor: pointer; color: var(--text); }
