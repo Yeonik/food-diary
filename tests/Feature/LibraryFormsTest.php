@@ -81,6 +81,19 @@ class LibraryFormsTest extends TestCase
             ->assertSee(Format::kcal($expected->kcal).' '.__('nutrition.kcal'), false);
     }
 
+    public function test_the_add_ingredient_button_prints_its_glyph_once(): void
+    {
+        // The glyph used to sit in the phrase as well as in the markup, and the
+        // button read "+ + Add ingredient".
+        $html = (string) $this->get(route('library.recipe.create'))->assertOk()->getContent();
+
+        preg_match('/<button[^>]*class="add-dashed"[^>]*>(.*?)<\/button>/s', $html, $button);
+
+        $this->assertNotEmpty($button, 'The add-ingredient button is not on the page.');
+        $this->assertStringContainsString(__('library.add_ingredient'), $button[1]);
+        $this->assertSame(1, substr_count($button[1], '+'));
+    }
+
     public function test_a_new_recipe_form_shows_no_total_because_there_is_nothing_to_total(): void
     {
         $this->get(route('library.recipe.create'))

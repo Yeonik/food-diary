@@ -40,7 +40,7 @@ return [
     'col_grams' => 'Grams',
     'choose' => '— choose —',
     'remove' => 'Remove',
-    'add_ingredient' => '+ Add ingredient',
+    'add_ingredient' => 'Add ingredient',
     'save_recipe' => 'Save recipe',
 
     // Outcomes.

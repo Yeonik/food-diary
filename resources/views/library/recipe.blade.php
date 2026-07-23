@@ -41,7 +41,12 @@
                         </div>
                     @endforeach
                 </div>
-                <button type="button" class="add-dashed" onclick="addIngredientRow()">+ {{ __('library.add_ingredient') }}</button>
+                {{-- The plus is the button's glyph, not part of the phrase, so it
+                     lives here and not in the translation — where it once did, and
+                     printed twice. .add-dashed spaces the two as flex children. --}}
+                <button type="button" class="add-dashed" onclick="addIngredientRow()">
+                    <span aria-hidden="true">+</span>{{ __('library.add_ingredient') }}
+                </button>
             </div>
 
             @if ($total !== null)
