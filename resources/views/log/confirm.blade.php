@@ -84,7 +84,7 @@
                             <span class="cring"><span></span></span>
                             <span class="cbody">
                                 <span class="n">{{ __('confirm.manual_option') }}</span>
-                                <span class="chip"><span aria-hidden="true">✓</span>{{ __('source.manual') }}</span>
+                                <x-source-chip source="manual" />
                             </span>
                         </label>
 

@@ -69,10 +69,39 @@ class ConfirmScreenTest extends TestCase
             $this->candidate('open_food_facts', 250, true),
         ]);
 
-        $this->withSession($pending)->get(route('log.confirm'))
+        $html = (string) $this->withSession($pending)->get(route('log.confirm'))
+            ->assertOk()->getContent();
+
+        // Every choice, including hand entry and skip, renders unchecked. Read off
+        // the radios themselves rather than the page, so the assertion cannot pass
+        // just because the word is missing.
+        preg_match_all('/<input type="radio"[^>]*>/', $html, $radios);
+        $this->assertGreaterThanOrEqual(4, count($radios[0]), 'The candidates did not render.');
+        foreach ($radios[0] as $radio) {
+            $this->assertStringNotContainsString('checked', $radio);
+        }
+
+        // And the button that would log them says why it cannot yet.
+        $this->assertMatchesRegularExpression('/<button[^>]*data-confirm-submit[^>]*disabled/', $html);
+        $this->assertStringContainsString(__('confirm.choose_hint'), $html);
+    }
+
+    /**
+     * The block that explains the zero-match case belongs on a dish nothing
+     * answered for, and nowhere else.
+     */
+    public function test_the_no_match_explanation_appears_only_when_nothing_answered(): void
+    {
+        $this->withSession($this->pending([$this->candidate('estimated', 50, false)]))
+            ->get(route('log.confirm'))
             ->assertOk()
-            ->assertDontSee('checked')   // nothing pre-selected
-            ->assertSee('disabled');     // the record button starts disabled
+            ->assertSee('zero-note')
+            ->assertSee(__('confirm.no_matches'));
+
+        $this->withSession($this->pending([$this->candidate('usda', 100, true)]))
+            ->get(route('log.confirm'))
+            ->assertOk()
+            ->assertDontSee('zero-note');
     }
 
     public function test_the_chosen_source_supplies_its_own_values_scaled_by_weight(): void
@@ -136,12 +165,13 @@ class ConfirmScreenTest extends TestCase
             ->assertOk()
             ->assertSee('https://images.openfoodfacts.org/z.small.jpg', false);
 
-        // Without one: no image element, and no error.
-        $this->withSession($this->pending([
+        // Without one: no image element at all, and no error.
+        $html = (string) $this->withSession($this->pending([
             $this->candidate('open_food_facts', 120, true),
-        ]))->get(route('log.confirm'))
-            ->assertOk()
-            ->assertDontSee('source__thumb');
+        ]))->get(route('log.confirm'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('<img', $html);
+        $this->assertStringNotContainsString('cthumb', $html);
     }
 
     public function test_hand_entered_values_are_logged_verified_at_zero_matches(): void
