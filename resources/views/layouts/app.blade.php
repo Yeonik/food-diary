@@ -40,10 +40,10 @@
         $current = request()->route()?->getName();
         $backTo = $parents[$current] ?? null;
 
-        // The three ways to log something ride along with the day — and only when
-        // it already has entries, because an empty day offers them in its own
-        // placeholder instead. $hasAnyEntry comes from the diary view.
-        $onDay = request()->routeIs('diary.*') && ($hasAnyEntry ?? false);
+        // The three ways to log something ride along with the day, whether or not
+        // it has entries yet: they are the only route to the barcode path, and an
+        // empty day is exactly when a first entry gets made.
+        $onDay = request()->routeIs('diary.*');
     @endphp
 
     <div class="app">
@@ -68,6 +68,7 @@
                         <a class="back" href="{{ route($backTo) }}" aria-label="{{ __('common.back') }}">‹</a>
                     @endif
                     <div class="title">@yield('title', __('nav.brand'))</div>
+                    @yield('topbar_nav')
                 </div>
                 @if ($onDay)
                     <div class="day-actions">

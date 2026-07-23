@@ -173,6 +173,7 @@ h1, h2, h3 { font-weight: 800; line-height: 1.2; }
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
 .topbar-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.date-nav { display: flex; gap: 6px; flex-shrink: 0; }   /* the day's ‹ › , as .back pairs */
 .title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .back {
     width: 38px; height: 38px; flex-shrink: 0;
@@ -312,7 +313,10 @@ select.field { cursor: pointer; }
 .ring-num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .ring-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 .ring-total { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+/* With no goal there is no ring — just what was eaten, stated and left alone.
+   The build sets these captions a point larger than the ring's. */
 .ring-plain { padding: 16px 0 6px; }
+.ring-plain .ring-sub { font-size: 13px; }
 .ring-eaten { font-size: 46px; font-weight: 800; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
 .macros { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
@@ -324,8 +328,6 @@ select.field { cursor: pointer; }
 .mrow b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
 .mbar { height: 5px; background: #fff; border-radius: 3px; margin-top: 8px; }
 .mbar > div { height: 100%; background: var(--primary); border-radius: 3px; }
-
-.day-estimates { margin-top: 14px; }
 
 /* --- Empty ------------------------------------------------------------------ */
 
@@ -551,13 +553,6 @@ select.field { cursor: pointer; }
 .split-c { background: #a9cbc7; }
 .split-legend { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 
-/* --- Provenance in running text ---------------------------------------------
-   Where a chip would be too heavy — the day's "some entries are estimates" note. */
-
-.prov { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
-.prov--verified { color: var(--primary); }
-.prov--estimate { color: var(--text-muted); font-weight: 400; }
-
 /* --- Flash, errors, pagination ------------------------------------------------ */
 
 .notice { background: var(--primary-tint); color: var(--primary-dark); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-weight: 600; font-size: 14px; }
@@ -565,12 +560,6 @@ select.field { cursor: pointer; }
 .errors ul { margin: 0; padding-left: 18px; }
 .field-error { color: #8a6d3b; font-size: 12px; margin-top: 4px; }
 .pagination { margin-top: 18px; font-size: 14px; }
-
-/* --- Date stepper (day screen) ------------------------------------------------ */
-
-.datestep { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 14px; }
-.datestep a, .datestep span { min-height: 40px; display: inline-flex; align-items: center; padding: 0 10px; font-weight: 700; }
-.datestep__label { font-size: 16px; }
 
 /* --- Responsive --------------------------------------------------------------- */
 

@@ -2,20 +2,22 @@
 
 @section('title', $date->isToday() ? __('day.today') : $date->translatedFormat('j F, l'))
 
-@section('content')
-    <div class="datestep">
-        <a href="{{ route('diary.index', ['date' => $previous->toDateString()]) }}" aria-label="{{ $previous->translatedFormat('j F') }}">‹</a>
-        <span class="datestep__label">{{ $date->isToday() ? __('day.today') : $date->translatedFormat('j F, l') }}</span>
-        <a href="{{ route('diary.index', ['date' => $next->toDateString()]) }}" aria-label="{{ $next->translatedFormat('j F') }}">›</a>
+{{-- The day is the one screen that moves between dates, so its arrows sit in the
+     topbar beside the title, which already names the day being shown. --}}
+@section('topbar_nav')
+    <div class="date-nav">
+        <a class="back" href="{{ route('diary.index', ['date' => $previous->toDateString()]) }}"
+           aria-label="{{ $previous->translatedFormat('j F') }}">‹</a>
+        <a class="back" href="{{ route('diary.index', ['date' => $next->toDateString()]) }}"
+           aria-label="{{ $next->translatedFormat('j F') }}">›</a>
     </div>
+@endsection
 
+@section('content')
     @if (! $hasAnyEntry)
-        <x-empty-state icon="day" :title="__('day.empty_title')" :body="__('day.empty_body')">
-            <x-slot:action>
-                <x-button href="{{ route('log.photo') }}" icon="camera">{{ __('nav.add_photo') }}</x-button>
-                <x-button variant="secondary" href="{{ route('log.manual') }}" icon="manual" data-dialog-open="manual-dialog">{{ __('nav.add_manual') }}</x-button>
-            </x-slot:action>
-        </x-empty-state>
+        {{-- No buttons here: the three ways to log something are in the topbar and
+             the FAB, which stay put whether or not the day has entries. --}}
+        <x-empty-state icon="day" :title="__('day.empty_title')" :body="__('day.empty_body')" />
     @else
         <div class="day">
             {{-- Meals: a card each, in a responsive grid. On desktop this column
@@ -76,7 +78,10 @@
                 </div>
 
                 @if ($summary->hasEstimates)
-                    <p class="day-estimates prov prov--estimate">{{ __('day.has_estimates') }}</p>
+                    {{-- Some of today's numbers are the model's estimates. The
+                         totals say so plainly; they are not quietly counted as
+                         verified (hard rule 2). --}}
+                    <div class="zero-note">{{ __('day.has_estimates') }}</div>
                 @endif
             </div>
         </div>
