@@ -105,6 +105,7 @@ class FoodItemController extends Controller
         return view('library.recipe', [
             'recipe' => null,
             'ingredients' => FoodItem::query()->orderBy('name')->get(),
+            'total' => null,
         ]);
     }
 
@@ -134,13 +135,23 @@ class FoodItemController extends Controller
         return redirect()->route('library.index')->with('status', __('library.recipe_saved', ['name' => $recipe->name]));
     }
 
-    public function editRecipe(FoodItem $item): View
+    public function editRecipe(FoodItem $item, RecipeCalculator $calculator): View
     {
         abort_unless($item->isRecipe(), 404);
+
+        // What the ingredients currently come to, per 100 g. A saved recipe
+        // cannot hold a cycle — saving one is refused — but the guard stays,
+        // because a screen should not be the thing that fails.
+        try {
+            $total = $calculator->profileFor($item->load('ingredients.ingredient'));
+        } catch (RecipeCycleException) {
+            $total = null;
+        }
 
         return view('library.recipe', [
             'recipe' => $item->load('ingredients'),
             'ingredients' => FoodItem::query()->where('id', '!=', $item->id)->orderBy('name')->get(),
+            'total' => $total,
         ]);
     }
 

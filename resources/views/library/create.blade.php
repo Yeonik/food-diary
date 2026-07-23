@@ -32,6 +32,13 @@
                 </div>
             </x-card>
 
+            {{-- A value typed off a package is vouched for by the person who read
+                 it. The model had no part in it, so it counts as verified. --}}
+            <div class="note">
+                <span class="ok" aria-hidden="true">✓</span>
+                <span>{{ __('library.manual_is_verified') }}</span>
+            </div>
+
             <div class="actions-end" style="margin-top:0">
                 <x-button variant="secondary" href="{{ route('library.index') }}">{{ __('common.cancel') }}</x-button>
                 <x-button type="submit">{{ __('common.save') }}</x-button>

@@ -54,4 +54,6 @@ return [
     'duplicates_merged' => 'Duplicates merged.',
     'cycle_error' => 'Those ingredients form a cycle.',
     'in_use_error' => 'This item is used by a recipe; remove it there first.',
+    'manual_is_verified' => 'A product you enter by hand counts as verified — you read the numbers, the model did not invent them.',
+    'recipe_total' => 'Per 100 g',
 ];

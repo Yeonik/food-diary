@@ -44,6 +44,21 @@
                 <button type="button" class="add-dashed" onclick="addIngredientRow()">+ {{ __('library.add_ingredient') }}</button>
             </div>
 
+            @if ($total !== null)
+                {{-- What the ingredients above come to. A recipe stores no numbers
+                     of its own; these are computed from them, which is why editing
+                     an ingredient later cannot rewrite an entry already logged. --}}
+                <div class="total-bar">
+                    <span class="l">{{ __('library.recipe_total') }}</span>
+                    <span class="v">
+                        {{ \App\Support\Format::kcal($total->kcal) }} {{ __('nutrition.kcal') }} ·
+                        {{ __('nutrition.p') }} {{ \App\Support\Format::macro($total->proteinG) }} /
+                        {{ __('nutrition.f') }} {{ \App\Support\Format::macro($total->fatG) }} /
+                        {{ __('nutrition.c') }} {{ \App\Support\Format::macro($total->carbsG) }}
+                    </span>
+                </div>
+            @endif
+
             <div class="actions-end" style="margin-top:0">
                 <x-button variant="secondary" href="{{ route('library.index') }}">{{ __('common.cancel') }}</x-button>
                 <x-button type="submit">{{ __('library.save_recipe') }}</x-button>
