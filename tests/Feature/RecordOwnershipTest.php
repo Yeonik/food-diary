@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\FoodItem;
-use App\Models\FoodItemAlias;
 use App\Models\Goal;
 use App\Models\MealEntry;
 use App\Models\User;
@@ -128,23 +127,28 @@ class RecordOwnershipTest extends TestCase
         }
     }
 
-    public function test_an_alias_carries_the_same_owner_as_the_item_it_names(): void
+    public function test_an_alias_disagreeing_with_its_item_is_refused_by_the_database(): void
     {
         // An alias keeps its own user_id rather than reaching through the item,
-        // so the two could in principle disagree. Through the app they cannot:
-        // both are written by the same signed-in person. This one is still the
-        // application's word — `food_item_aliases` has a plain key on the item,
-        // not a composite one, so nothing underneath is holding it.
-        $user = $this->signIn();
-
+        // so the two could in principle disagree. `(food_item_id, user_id)` is
+        // one key, so they cannot — and this asks the table rather than the
+        // application, which would only be agreeing with itself.
+        //
+        // Worth holding from underneath: lookups match against aliases as well
+        // as against the item's own name, so one attached across the boundary
+        // would steer somebody else's recognition.
+        $this->signIn();
         $item = FoodItem::factory()->create();
-        $alias = FoodItemAlias::query()->create([
-            'food_item_id' => $item->id,
-            'name' => 'another name for it',
-        ]);
 
-        $this->assertSame($item->user_id, $alias->user_id);
-        $this->assertSame($user->id, $alias->user_id);
+        $this->signIn(User::factory()->create());
+
+        $this->expectException(QueryException::class);
+
+        DB::table('food_item_aliases')->insert([
+            'user_id' => auth()->id(),
+            'food_item_id' => $item->id,
+            'name' => 'a name for something that is not mine',
+        ]);
     }
 
     public function test_a_recipe_line_disagreeing_with_its_recipe_is_refused_by_the_database(): void
