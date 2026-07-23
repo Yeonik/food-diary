@@ -117,4 +117,33 @@ class SnapshotImmutabilityTest extends TestCase
         $this->assertSame($survivor->id, $entry->food_item_id);
         $this->assertModelMissing($duplicate);
     }
+
+    public function test_deleting_an_item_does_not_change_a_past_entry(): void
+    {
+        $chicken = FoodItem::factory()->direct(kcal: 165, protein: 31, fat: 3.6, carbs: 0)
+            ->create(['name' => 'Chicken breast']);
+
+        $entry = MealEntry::fromPortion(
+            $chicken->storedProfile()->forGrams(200),
+            'Chicken breast',
+            MealType::Lunch,
+            CarbonImmutable::parse('2026-05-10 13:00'),
+            $chicken->id,
+        );
+        $entry->save();
+
+        // Removing something from the library does not edit history. The
+        // database used to unlink the entry itself, with ON DELETE SET NULL;
+        // now that the link is half of a key naming the owner, the delete route
+        // has to unlink first — and this is what says it still does.
+        $this->delete(route('library.destroy', $chicken))
+            ->assertRedirect(route('library.index'));
+
+        $entry->refresh();
+
+        $this->assertSame(330.0, $entry->kcal);
+        $this->assertSame(62.0, $entry->protein_g);
+        $this->assertNull($entry->food_item_id, 'The entry still points at an item that is gone.');
+        $this->assertModelMissing($chicken);
+    }
 }

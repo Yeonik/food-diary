@@ -188,6 +188,59 @@ class RecordOwnershipTest extends TestCase
         ]);
     }
 
+    public function test_an_entry_pointing_at_another_persons_item_is_refused_by_the_database(): void
+    {
+        // The lock under the code from the merge commit: the validation rules
+        // and the scoped read there are what a person meets, and this is what
+        // holds if a query is ever written that meets neither.
+        $mine = $this->signIn();
+
+        $this->signIn(User::factory()->create());
+        $theirItem = FoodItem::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('meal_entries')->insert([
+            'user_id' => $mine->id,
+            'food_item_id' => $theirItem->id,
+            'logged_at' => '2026-07-20 12:00:00',
+            'meal' => 'lunch',
+            'name' => 'Something of theirs',
+            'grams' => 100,
+            'kcal' => 100,
+            'protein_g' => 1,
+            'fat_g' => 2,
+            'carbs_g' => 3,
+            'source' => 'library',
+        ]);
+    }
+
+    public function test_an_entry_with_no_link_at_all_is_still_allowed(): void
+    {
+        // Half the entries in the app are this: logged from a source that is not
+        // the library, or from an item since deleted. A null anywhere in a
+        // composite key means the key is not checked, which is what makes the
+        // constraint above affordable — but it is worth pinning, because getting
+        // it wrong would make every hand-entered meal impossible to save.
+        $mine = $this->signIn();
+
+        DB::table('meal_entries')->insert([
+            'user_id' => $mine->id,
+            'food_item_id' => null,
+            'logged_at' => '2026-07-20 12:00:00',
+            'meal' => 'lunch',
+            'name' => 'Straight off the packet',
+            'grams' => 100,
+            'kcal' => 100,
+            'protein_g' => 1,
+            'fat_g' => 2,
+            'carbs_g' => 3,
+            'source' => 'manual',
+        ]);
+
+        $this->assertSame(1, DB::table('meal_entries')->count());
+    }
+
     public function test_nothing_is_written_when_nobody_is_signed_in(): void
     {
         // Fail closed. A console context that means to write on somebody's behalf

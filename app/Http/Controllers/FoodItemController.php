@@ -185,7 +185,18 @@ class FoodItemController extends Controller
             return back()->withErrors(['delete' => __('library.in_use_error')]);
         }
 
-        $item->delete();
+        DB::transaction(function () use ($item): void {
+            // Past entries keep their numbers and lose only the link back. The
+            // database used to do this itself, with ON DELETE SET NULL; it
+            // cannot any more, because that link is now half of a key whose
+            // other half is the owner, and SET NULL would null the owner too.
+            // So the unlinking is written down here — and if it were ever left
+            // out, the delete below would be refused rather than quietly
+            // reaching across. The merge does the same thing by repointing.
+            MealEntry::query()->where('food_item_id', $item->id)->update(['food_item_id' => null]);
+
+            $item->delete();
+        });
 
         return redirect()->route('library.index')->with('status', __('library.item_removed'));
     }
