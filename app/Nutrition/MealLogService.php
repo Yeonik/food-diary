@@ -107,9 +107,19 @@ class MealLogService
             source: $source,
         );
 
-        $foodItemId = is_int($candidate['food_item_id'] ?? null) ? $candidate['food_item_id'] : null;
+        $claimedItemId = is_int($candidate['food_item_id'] ?? null) ? $candidate['food_item_id'] : null;
 
-        if ($foodItemId === null && $source !== NutrientSource::Estimated) {
+        // This id is not accepted from the form — it is built server-side by
+        // encodeCandidate() from a tier-1 match, and tier 1 already only answers
+        // from the signed-in person's own library. The read below is the second
+        // lock: through the scoped model, somebody else's item comes back as
+        // absent exactly as one that never existed would, so no diary entry can
+        // come to reference a library that is not this person's.
+        $foodItemId = $claimedItemId !== null && FoodItem::query()->whereKey($claimedItemId)->exists()
+            ? $claimedItemId
+            : null;
+
+        if ($foodItemId === null && $claimedItemId === null && $source !== NutrientSource::Estimated) {
             // Confirming a real (non-estimated) match that is not already in the
             // library promotes it there — with both names and the source's stable
             // id (an Open Food Facts barcode, a USDA fdcId) — so lower tiers get
@@ -122,6 +132,11 @@ class MealLogService
             // Only confirmed phrasings are stored — never a bare recognition.
             $this->recordAliases($foodItemId, $terms);
         }
+
+        // The remaining case — an id was claimed and it is not this person's —
+        // logs the portion as a plain snapshot: no link, and nothing promoted
+        // either, because numbers attributed to a personal library that is not
+        // theirs do not become an item in theirs.
 
         $entry = MealEntry::fromPortion($profile->forGrams($grams), $terms->display(), $meal, $loggedAt, $foodItemId);
         $entry->save();

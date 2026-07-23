@@ -13,6 +13,7 @@ use App\Nutrition\ProfileOrigin;
 use App\Nutrition\RecipeCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -191,8 +192,16 @@ class FoodItemController extends Controller
 
     public function merge(Request $request, FoodItem $item): RedirectResponse
     {
+        // The survivor arrives in the body, not the path, so route model binding
+        // never sees it and the model's scope never runs. A bare `exists` here
+        // would ask the whole table, which is the one place in this controller
+        // where an id can name a row its owner did not write. Constrained to the
+        // signed-in person, somebody else's id fails validation in exactly the
+        // same words as an id that never existed.
         $validated = $request->validate([
-            'target_id' => ['required', 'integer', Rule::exists('food_items', 'id')->whereNot('id', $item->id)],
+            'target_id' => ['required', 'integer', Rule::exists('food_items', 'id')
+                ->where('user_id', Auth::id())
+                ->whereNot('id', $item->id)],
         ]);
 
         $targetId = (int) $validated['target_id'];
@@ -207,7 +216,10 @@ class FoodItemController extends Controller
             // Don't lose a second-language name the duplicate carried: if the
             // survivor has no alt name, adopt one of the duplicate's names that
             // it does not already have. Never overwrite an existing alt name.
-            $target = FoodItem::find($targetId);
+            // Read back through the model, so the scope answers this too. The
+            // validation above already settled it; a write to `alt_name` is
+            // worth having the second lock on.
+            $target = FoodItem::query()->find($targetId);
             if ($target !== null && ($target->alt_name === null || trim($target->alt_name) === '')) {
                 foreach ([$item->alt_name, $item->name] as $candidate) {
                     if (is_string($candidate) && trim($candidate) !== '' && strcasecmp($candidate, $target->name) !== 0) {
@@ -256,7 +268,12 @@ class FoodItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'ingredients' => ['required', 'array', 'min:1'],
-            'ingredients.*.item_id' => ['required', 'integer', Rule::exists('food_items', 'id')],
+            // The same shape as the merge target: an id from the body, checked
+            // against the whole table unless it is told whose table to look at.
+            // A recipe built on somebody else's item would hold a line pointing
+            // across the boundary, and the calculator would read through it.
+            'ingredients.*.item_id' => ['required', 'integer', Rule::exists('food_items', 'id')
+                ->where('user_id', Auth::id())],
             'ingredients.*.grams' => ['required', 'numeric', 'min:0.1', 'max:5000'],
         ]);
 
