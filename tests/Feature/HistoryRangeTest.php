@@ -19,6 +19,13 @@ class HistoryRangeTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_a_custom_range_aggregates_only_entries_within_it(): void
     {
         MealEntry::factory()->create([

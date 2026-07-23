@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 return [
 
-    /*
-    | A single optional access password for this self-hosted instance. Leave it
-    | unset and the diary is open (the default for a machine only you can reach);
-    | set it and every page requires unlocking once per session.
-    */
-    'access_password' => env('APP_ACCESS_PASSWORD'),
-
     // There is deliberately no "fake recogniser" runtime switch. The fake is a
     // test double, bound only in the test environment; the running app always
     // uses the real recogniser and fails loudly without a key.

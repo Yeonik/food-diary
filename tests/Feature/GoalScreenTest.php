@@ -18,6 +18,13 @@ class GoalScreenTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_the_target_card_is_dimmed_when_no_goal_is_set(): void
     {
         $html = (string) $this->get(route('goal.edit'))->getContent();

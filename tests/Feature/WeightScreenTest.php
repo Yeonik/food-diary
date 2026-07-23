@@ -19,6 +19,13 @@ class WeightScreenTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     /**
      * @return array<string, array{0: string}>
      */

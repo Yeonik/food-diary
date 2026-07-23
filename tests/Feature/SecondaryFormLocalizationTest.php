@@ -12,14 +12,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * The secondary forms that were not part of the screen rebuild — the unlock
- * gate, the library item and recipe editors, the entry editor — render in both
- * locales with no English literal left behind and no unresolved translation key
- * leaking into the markup.
+ * The secondary forms that were not part of the screen rebuild — the sign-in
+ * and registration screens, the library item and recipe editors, the entry
+ * editor — render in both locales with no English literal left behind and no
+ * unresolved translation key leaking into the markup.
  */
 class SecondaryFormLocalizationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
 
     /**
      * A rendered page must never contain a bare "group.key" — that is what
@@ -28,23 +35,28 @@ class SecondaryFormLocalizationTest extends TestCase
     private function assertNoUntranslatedKeys(string $html, string $where): void
     {
         $this->assertDoesNotMatchRegularExpression(
-            '/\b(?:access|entries|library)\.[a-z_]+/',
+            '/\b(?:auth|entries|library)\.[a-z_]+/',
             $html,
             "An untranslated key leaked in {$where}.",
         );
     }
 
-    public function test_the_unlock_gate_localises_in_both_locales(): void
+    public function test_the_account_screens_localise_in_both_locales(): void
     {
-        // A password makes the instance locked, so the gate actually renders.
-        config(['nutrition.access_password' => 'letmein']);
+        // Signed out, so the guest screens are the ones that render.
+        auth()->logout();
 
-        $expect = ['en' => 'Access password', 'ru' => 'Пароль доступа'];
+        $expect = [
+            route('login') => ['en' => 'Welcome back', 'ru' => 'С возвращением'],
+            route('register') => ['en' => 'Create an account', 'ru' => 'Создать аккаунт'],
+        ];
 
-        foreach (['en', 'ru'] as $locale) {
-            $response = $this->withCookie(SetLocale::COOKIE, $locale)->get(route('unlock.show'));
-            $response->assertOk()->assertSee($expect[$locale]);
-            $this->assertNoUntranslatedKeys((string) $response->getContent(), "{$locale} at unlock");
+        foreach ($expect as $url => $phrases) {
+            foreach (['en', 'ru'] as $locale) {
+                $response = $this->withCookie(SetLocale::COOKIE, $locale)->get($url);
+                $response->assertOk()->assertSee($phrases[$locale]);
+                $this->assertNoUntranslatedKeys((string) $response->getContent(), "{$locale} at {$url}");
+            }
         }
     }
 

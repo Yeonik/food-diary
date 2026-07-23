@@ -20,6 +20,13 @@ class MealVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_a_hidden_meal_is_not_shown_but_still_counts_in_the_day_total(): void
     {
         Goal::factory()->create(['daily_kcal' => null, 'show_snack' => false]);

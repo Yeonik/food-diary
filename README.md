@@ -128,6 +128,32 @@ These are decisions, not missing features:
   that have entries rather than flattering itself with the whole range.
   `tests/Feature/NeutralChartsTest.php` holds this to the markup.
 
+## Accounts
+
+The diary holds other people's food logs, so authentication is
+**[Laravel Fortify](https://laravel.com/docs/fortify)** — not hand-written. There
+is no public page: every route in `routes/web.php` sits inside one `auth` group,
+so a screen added later is protected because of where it lives rather than
+because somebody remembered. `/up`, the health check, is the single exception.
+
+What is deliberately **off**, and why:
+
+- **Password reset by email.** This instance has no deliverable mail configured,
+  and a reset screen that promises a link which lands in a log file is worse than
+  no screen at all. Until mail exists, **a forgotten password is reset by the
+  owner** with an artisan command. The route does not exist, so there is nothing
+  to click and be disappointed by.
+- **Two-factor and passkeys.** Not offered. `laravel/passkeys` is installed
+  anyway — Fortify 1.37 requires it — so it is dormant by decision rather than by
+  accident: with the features off Fortify registers none of their routes, and
+  because Fortify's migrations are never published, neither the passkey table nor
+  the two-factor columns exist. `tests/Feature/AuthenticationTest.php` asserts
+  both, so "off" is a fact about the routing table and the schema, not a claim.
+
+Sign-in attempts are throttled to five a minute per email-and-IP pair, and a
+wrong password and an unknown address are answered identically — whether an
+address has an account here is not something the screen tells a stranger.
+
 ## No scraping
 
 Only official APIs with an explicit licence are used: USDA (public domain) and
@@ -140,9 +166,9 @@ touched. This is a deliberate choice.
 There is no build step. The interface is server-rendered Blade; the stylesheet
 (`public/css/app.css`) and the fonts (`public/fonts/`) are served as static
 files. No Node, npm, Vite or Tailwind — not in the Docker image, not in CI. This
-is a decision, not an omission: a self-hosted single-user tool is simpler to run
-and to verify when the whole front-end is one stylesheet and a handful of inline
-SVG icons.
+is a decision, not an omission: a self-hosted diary is simpler to run and to
+verify when the whole front-end is one stylesheet and a handful of inline SVG
+icons.
 
 ### The design system
 
@@ -249,17 +275,15 @@ Configure recognition and lookups in a `.env`:
 - `USDA_API_KEY=...` — free from <https://api.data.gov>. Sent as a header, never
   in a URL. Without it, USDA matches are skipped with a notice.
 - Open Food Facts needs **no key**.
-- `APP_ACCESS_PASSWORD=...` — optional; a plaintext value or a bcrypt hash. Set
-  it to lock the instance; left blank, the diary is open.
 
 See `.env.example` for the full list.
 
 ## Deploying (Railway)
 
 The same `Dockerfile` that runs it locally runs it on [Railway](https://railway.com):
-connect the repository, add a volume, set the variables, deploy. It is a
-single-user tool served by `php artisan serve` — adequate for one person, not a
-high-traffic host.
+connect the repository, add a volume, set the variables, deploy. It is served by
+`php artisan serve` — adequate for a handful of accounts, not a high-traffic
+host.
 
 **Persistent volume (required).** Everything that is written — the SQLite
 database, uploaded photos, sessions and cache (both in SQLite), logs — lives
@@ -324,7 +348,6 @@ off the machine as well.
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
 | `APP_URL` | `https://<your-app>.up.railway.app` |
-| `APP_ACCESS_PASSWORD` | a **bcrypt hash** (see the `$` note below) |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `DB_CONNECTION` | `sqlite` |
 | `DB_DATABASE` | `/app/storage/app/food-diary.sqlite` (must match the volume) |
@@ -339,17 +362,9 @@ off the machine as well.
 `APP_KEY` must be a fixed value you set once — not regenerated per deploy, or
 every session breaks on each release.
 
-**The `$` in a bcrypt hash — read this.** A bcrypt hash looks like
-`$2y$12$....`. Railway interpolates only its own `${{ ... }}` reference syntax,
-so a lone `$` is stored literally and the hash is safe to paste **as-is**.
-Do **not** reuse a hash you doubled for `docker-compose`: in a compose `.env`
-each `$` is escaped to `$$`, and Railway would store those doubled dollars
-verbatim, so `password_verify` fails **silently** — the password just stops
-matching with nothing in the logs. On Railway use the raw single-`$` hash
-straight from `php -r 'echo password_hash("your-password", PASSWORD_BCRYPT), PHP_EOL;'`.
-
-**Health check.** The app exposes `/up` (returns 200, outside the password
-gate). Point Railway's health check path at `/up` if you enable one.
+**Health check.** The app exposes `/up` (returns 200, and it is the one path
+that needs no account). Point Railway's health check path at `/up` if you enable
+one.
 
 ## Development
 

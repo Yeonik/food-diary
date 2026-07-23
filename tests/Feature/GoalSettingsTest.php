@@ -17,6 +17,13 @@ class GoalSettingsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_enabling_the_goal_stores_the_target_and_meal_toggles(): void
     {
         // Snack omitted from the payload — an unchecked box is simply absent.

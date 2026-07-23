@@ -26,6 +26,13 @@ class NeutralChartsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     private function logDay(CarbonImmutable $day, int $kcal): void
     {
         MealEntry::factory()->create([

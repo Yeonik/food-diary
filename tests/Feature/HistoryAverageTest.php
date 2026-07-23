@@ -20,6 +20,13 @@ class HistoryAverageTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_average_divides_by_days_with_entries_not_the_whole_range(): void
     {
         foreach ([0, 1, 2] as $daysAgo) {

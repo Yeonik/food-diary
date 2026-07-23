@@ -66,6 +66,42 @@
             <x-button type="submit">{{ __('settings.save') }}</x-button>
         </form>
 
+        {{-- The account. Nothing to configure here yet beyond the password — the
+             address is what you signed in with, and there is no profile. --}}
+        <x-card style="margin-bottom:16px">
+            <div class="account-row">
+                <div>
+                    <div class="l">{{ __('auth.account') }}</div>
+                    <div class="who">{{ auth()->user()?->email }}</div>
+                </div>
+                <form method="post" action="{{ route('logout') }}">
+                    @csrf
+                    <x-button variant="secondary" type="submit">{{ __('auth.logout') }}</x-button>
+                </form>
+            </div>
+
+            <form method="post" action="{{ route('user-password.update') }}"
+                  style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+                @csrf @method('PUT')
+                <div class="flabel" style="margin-bottom:10px">{{ __('auth.change_password') }}</div>
+
+                <x-field type="password" name="current_password" :label="__('auth.current_password')"
+                         autocomplete="current-password" required />
+                <x-field type="password" name="password" :label="__('auth.new_password')"
+                         autocomplete="new-password" required :hint="__('auth.password_hint')" />
+                <x-field type="password" name="password_confirmation" :label="__('auth.password_confirm')"
+                         autocomplete="new-password" required />
+
+                {{-- Fortify validates this form into its own error bag, so its
+                     messages do not appear in the layout's shared list. --}}
+                @foreach ($errors->updatePassword->all() as $message)
+                    <p class="field-error">{{ $message }}</p>
+                @endforeach
+
+                <x-button type="submit" style="margin-top:14px">{{ __('auth.change_password_submit') }}</x-button>
+            </form>
+        </x-card>
+
         {{-- Language. Two submit buttons post the choice; it is saved in a cookie
              and the redirect back re-renders at once. Works without JavaScript. --}}
         <x-card class="set-row">

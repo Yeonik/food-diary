@@ -15,6 +15,13 @@ class DiaryInterfaceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_remaining_is_shown_with_a_goal_and_hidden_without_one(): void
     {
         MealEntry::factory()->create([

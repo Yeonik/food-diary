@@ -21,6 +21,13 @@ class FlashMessageLocalizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_recording_and_removing_a_weight_reading_answers_in_the_chosen_locale(): void
     {
         $this->withCookie(SetLocale::COOKIE, 'ru')

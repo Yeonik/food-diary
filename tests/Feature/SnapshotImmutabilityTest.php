@@ -22,6 +22,13 @@ class SnapshotImmutabilityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_correcting_a_direct_item_does_not_change_a_past_entry(): void
     {
         $chicken = FoodItem::factory()->direct(kcal: 165, protein: 31, fat: 3.6, carbs: 0)

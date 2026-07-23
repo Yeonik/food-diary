@@ -21,6 +21,13 @@ class LibraryFormsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_the_new_product_form_starts_empty_and_suggests_no_numbers(): void
     {
         $html = (string) $this->get(route('library.create'))->assertOk()->getContent();

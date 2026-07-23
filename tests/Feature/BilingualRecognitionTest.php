@@ -30,6 +30,13 @@ class BilingualRecognitionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     protected function tearDown(): void
     {
         foreach (glob(storage_path('app/private/photos').'/*') ?: [] as $file) {

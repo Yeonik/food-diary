@@ -19,6 +19,13 @@ class LocalizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     /**
      * Every translation key in a locale, as "group.key".
      *

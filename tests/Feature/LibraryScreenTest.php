@@ -20,6 +20,13 @@ class LibraryScreenTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_the_index_lists_a_direct_item_of_every_origin(): void
     {
         foreach (ProfileOrigin::cases() as $i => $origin) {

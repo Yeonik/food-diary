@@ -19,6 +19,13 @@ class EntryEditorTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     private function entry(): MealEntry
     {
         return MealEntry::factory()->create([

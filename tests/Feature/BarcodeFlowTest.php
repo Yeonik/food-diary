@@ -21,6 +21,13 @@ class BarcodeFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_a_known_code_logs_a_verified_open_food_facts_entry_with_the_products_values(): void
     {
         Http::fake([

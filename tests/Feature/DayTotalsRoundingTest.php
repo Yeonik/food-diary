@@ -20,6 +20,13 @@ class DayTotalsRoundingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     public function test_displayed_entries_add_up_to_the_subtotal_and_the_day_total(): void
     {
         // Fractions chosen so exact-then-round disagrees with round-then-sum:

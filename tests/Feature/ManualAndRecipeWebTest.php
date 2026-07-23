@@ -16,6 +16,13 @@ class ManualAndRecipeWebTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     private function fakeEmptyApis(): void
     {
         Http::fake([

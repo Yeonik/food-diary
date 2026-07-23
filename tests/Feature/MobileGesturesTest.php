@@ -21,6 +21,13 @@ class MobileGesturesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     private function stylesheet(): string
     {
         $css = file_get_contents(public_path('css/app.css'));

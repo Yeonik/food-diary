@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\EnsureUnlocked;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -31,13 +30,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         // Resolve the interface language before anything renders — including the
-        // unlock screen, so it too is localised. The choice cookie rides through
+        // sign-in screen, so it too is localised. The choice cookie rides through
         // the standard cookie encryption like any other.
         $middleware->appendToGroup('web', SetLocale::class);
 
-        // The access gate wraps every web page; it is a no-op unless a password
-        // is configured.
-        $middleware->appendToGroup('web', EnsureUnlocked::class);
+        // Where an unauthenticated request is sent. Without this Laravel looks
+        // for a route named `login`, which Fortify does provide — naming it here
+        // is what makes that dependency visible rather than magic.
+        $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

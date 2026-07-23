@@ -517,13 +517,24 @@ select.field { cursor: pointer; }
 .total-bar .tb-macros { display: flex; gap: 14px; }
 .total-bar .tb-macros b { font-size: 14px; }
 
-/* --- Single-purpose gate ----------------------------------------------------
-   The unlock screen. Sign-in / registration / reset are v0.3.0 and not built. */
+/* --- Accounts ----------------------------------------------------------------
+   Sign in and register (design/build, .auth). Password reset is not built: this
+   instance has no deliverable mail, so the screen would promise a link that goes
+   to a log file. The owner resets a password by hand instead. */
 
 .auth { max-width: 380px; margin: 20px auto 0; }
 .auth-icon { width: 60px; height: 60px; border-radius: 17px; display: flex; align-items: center; justify-content: center; margin-bottom: 22px; background: var(--primary-tint); color: var(--primary); }
+.auth-icon.dark { background: #123f3d; color: #fff; }
 .auth h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
 .auth .field { margin-bottom: 16px; }
+.auth-sub { font-size: 13px; color: var(--muted); font-weight: 600; margin: 8px 0 24px; line-height: 1.5; }
+.remember { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 600; cursor: pointer; }
+.remember input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+/* The signed-in account, on the settings screen: address, password, sign out. */
+.account-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.account-row .who { font-size: 15px; font-weight: 800; word-break: break-all; }
+.account-row .l { font-size: 13px; color: var(--text-muted); font-weight: 600; }
 
 /* --- Tab bar / FAB (mobile) --------------------------------------------------
    Both sit inside the fixed frame, so they never scroll away. The safe-area

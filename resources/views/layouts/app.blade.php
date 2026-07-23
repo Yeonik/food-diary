@@ -45,9 +45,11 @@
         // empty day is exactly when a first entry gets made.
         $onDay = request()->routeIs('diary.*');
 
-        // Behind the gate there is nowhere to navigate to: every section bounces
-        // back here, so offering them would be a rail that goes nowhere.
-        $locked = request()->routeIs('unlock*');
+        // Signed out there is nowhere to navigate to: every section bounces back
+        // to the sign-in screen, so offering them would be a rail that goes
+        // nowhere. Read from the guard, not from the route name, so a screen
+        // added later cannot forget to say it is a guest screen.
+        $guest = ! auth()->check();
     @endphp
 
     <div class="app">
@@ -57,7 +59,7 @@
                 <div class="logo" aria-hidden="true">{{ mb_substr(__('nav.brand'), 0, 1) }}</div>
                 <b>{{ __('nav.brand') }}</b>
             </div>
-            @unless ($locked)
+            @unless ($guest)
                 @foreach ($nav as $item)
                     <x-nav-item :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
                 @endforeach
@@ -111,7 +113,7 @@
             </main>
 
             {{-- Mobile: bottom tab bar --}}
-            @unless ($locked)
+            @unless ($guest)
                 <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
                     @foreach ($nav as $item)
                         <x-nav-item layout="tab" :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
@@ -144,7 +146,9 @@
 
     {{-- Manual entry as a dialog: opened by the "by hand" actions with JS, closed
          by Esc (native) or a click outside. Without JS the same actions are plain
-         links to /log/manual, so the flow still works. --}}
+         links to /log/manual, so the flow still works. It posts to a signed-in
+         route, so a guest screen does not carry it. --}}
+    @unless ($guest)
     <dialog id="manual-dialog" class="modal">
         <form method="post" action="{{ route('log.manual.store') }}">
             @csrf
@@ -165,6 +169,7 @@
             </div>
         </form>
     </dialog>
+    @endunless
 
     <script src="{{ asset('js/app.js') }}" defer></script>
 </body>

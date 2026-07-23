@@ -21,6 +21,13 @@ class ConfirmScreenTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signIn();
+    }
+
     /**
      * @param  list<array<string, mixed>>  $candidates
      * @return array<string, mixed>
