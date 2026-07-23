@@ -1,14 +1,16 @@
 @props([
-    'variant' => 'primary',   // primary | secondary | ghost | danger
+    'variant' => 'primary',   // primary | secondary | danger
     'full' => false,
     'icon' => null,           // optional leading icon name
     'href' => null,           // renders an <a> when set, a <button> otherwise
     'type' => 'submit',
 ])
 
-{{-- CTA and secondary actions (design/build/app.css, .btn). --}}
+{{-- CTA and secondary actions (design/build/app.css, .btn). The build also
+     defines a borderless variant; no screen asks for one, so neither the rule
+     nor the option is carried. --}}
 @php
-    $suffix = ['primary' => 'p', 'secondary' => 's', 'ghost' => 'g', 'danger' => 'd'][$variant] ?? 'p';
+    $suffix = ['primary' => 'p', 'secondary' => 's', 'danger' => 'd'][$variant] ?? 'p';
     $classes = 'btn btn-'.$suffix.($full ? ' btn-block' : '');
 @endphp
 

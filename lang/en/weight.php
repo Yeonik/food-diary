@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
     'title' => 'Weight',
-    'subtitle' => 'A log and a line — no target, no verdict.',
     'new_entry' => 'New reading',
     'decimal_hint' => 'A comma or a dot — either works.',
     'date' => 'Date',

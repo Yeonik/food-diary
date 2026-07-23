@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 return [
     'title' => 'Библиотека',
-    'subtitle' => 'Продукты, что вы подтвердили, поправили или задали — их спрашивают первыми.',
     'search' => 'Поиск продукта',
-    'search_action' => 'Найти',
     'all_products' => 'Все продукты',
     'new_product' => 'Новый продукт',
     'define_recipe' => 'Создать рецепт',

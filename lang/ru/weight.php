@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 return [
     'title' => 'Вес',
-    'subtitle' => 'Журнал и линия — без цели и без оценок.',
     'new_entry' => 'Новая запись',
     'decimal_hint' => 'Запятая или точка — годится любая.',
     'date' => 'Дата',
