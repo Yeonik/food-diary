@@ -77,10 +77,14 @@ class RecordOwnershipTest extends TestCase
         $first = $this->signIn();
         WeightEntry::query()->create(['recorded_on' => '2026-07-20', 'weight_kg' => 77.5]);
 
-        $this->signIn(User::factory()->create());
+        $second = $this->signIn(User::factory()->create());
         WeightEntry::query()->create(['recorded_on' => '2026-07-20', 'weight_kg' => 64.0]);
 
-        $this->assertSame(2, WeightEntry::query()->count());
+        // Counted past the scope on purpose: this is a claim about the table, not
+        // about what either person can see.
+        $this->assertSame(2, DB::table('weight_entries')->count());
+        $this->assertSame(1, WeightEntry::ownedBy($first)->count());
+        $this->assertSame(1, WeightEntry::ownedBy($second)->count());
 
         // And one person still cannot log two readings for one day.
         $this->signIn($first);
@@ -97,7 +101,7 @@ class RecordOwnershipTest extends TestCase
         $this->signIn(User::factory()->create());
         Goal::query()->create(['daily_kcal' => 1800]);
 
-        $this->assertSame(2, Goal::query()->count());
+        $this->assertSame(2, DB::table('goals')->count());
 
         $this->signIn($user);
 

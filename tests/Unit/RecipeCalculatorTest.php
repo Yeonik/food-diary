@@ -16,6 +16,14 @@ class RecipeCalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A recipe reads its own ingredients back, and that read is scoped now.
+        $this->signIn();
+    }
+
     public function test_a_recipe_profile_matches_hand_arithmetic(): void
     {
         $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create();

@@ -157,6 +157,18 @@ What is deliberately **off**, and why:
   the two-factor columns exist. `tests/Feature/AuthenticationTest.php` asserts
   both, so "off" is a fact about the routing table and the schema, not a claim.
 
+Every domain record belongs to one account, and the constraint is on the model,
+not on the query: a global scope filters every read, so a controller cannot leak
+by forgetting a `where`. With nobody signed in, a read returns **nothing** rather
+than everything — a console context that omits to say whose data it wants gets
+missing data, which is loud, instead of all of it, which is not. Reading on
+somebody's behalf outside a request means naming them.
+
+The library staying personal is the point rather than a side effect: it outranks
+USDA and Open Food Facts because *you* verified it, and a stranger's entry
+arriving in that first tier would destroy exactly the property that makes the
+tier worth having.
+
 Sign-in attempts are throttled to five a minute per email-and-IP pair, and a
 wrong password and an unknown address are answered identically — whether an
 address has an account here is not something the screen tells a stranger.
@@ -410,8 +422,14 @@ whose CI needs somebody's key is a repository nobody can verify.
 The real integrations are exercised by a documented manual step:
 
 ```bash
-php artisan nutrition:recognise path/to/meal.jpg
+php artisan nutrition:recognise path/to/meal.jpg --as=you@example.com
 ```
+
+The personal library is one person's library, so the command has to be told
+whose — it signs in as that account for its run, the same way a request would.
+With exactly one account it works it out; with several it asks rather than
+guessing, and with none it says the first tier will be empty and carries on,
+since Gemini, USDA and Open Food Facts need no account.
 
 **Barcode scanning** is a browser API and cannot run in CI, so verify it by hand:
 open `/log/barcode` in a supporting browser (Chrome or Edge on Android or

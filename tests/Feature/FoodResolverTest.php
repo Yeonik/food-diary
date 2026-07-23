@@ -17,6 +17,15 @@ class FoodResolverTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The personal library is one person's library now, so resolving against
+        // it means resolving as somebody.
+        $this->signIn();
+    }
+
     /**
      * Both external APIs answer with one match each. Faked, so no network.
      */
