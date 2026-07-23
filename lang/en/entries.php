@@ -8,4 +8,6 @@ return [
     'name' => 'Name',
     'meal' => 'Meal',
     'grams' => 'Grams',
+    'updated' => 'Entry updated.',
+    'deleted' => 'Entry deleted.',
 ];

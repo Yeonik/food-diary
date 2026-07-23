@@ -58,7 +58,7 @@ class FoodItemController extends Controller
             'carbs_g_per_100g' => $validated['carbs_g_per_100g'],
         ]);
 
-        return redirect()->route('library.index')->with('status', 'Item added to the library.');
+        return redirect()->route('library.index')->with('status', __('library.item_added'));
     }
 
     public function edit(FoodItem $item): View
@@ -75,7 +75,7 @@ class FoodItemController extends Controller
         $validated = $this->validateDirect($request);
         $item->update($validated);
 
-        return redirect()->route('library.index')->with('status', 'Item corrected. Past entries are unchanged.');
+        return redirect()->route('library.index')->with('status', __('library.item_corrected'));
     }
 
     public function createRecipe(): View
@@ -106,10 +106,10 @@ class FoodItemController extends Controller
                 return $recipe;
             });
         } catch (RecipeCycleException) {
-            return back()->withErrors(['ingredients' => 'Those ingredients form a cycle.'])->withInput();
+            return back()->withErrors(['ingredients' => __('library.cycle_error')])->withInput();
         }
 
-        return redirect()->route('library.index')->with('status', "Recipe \"{$recipe->name}\" saved.");
+        return redirect()->route('library.index')->with('status', __('library.recipe_saved', ['name' => $recipe->name]));
     }
 
     public function editRecipe(FoodItem $item): View
@@ -137,10 +137,10 @@ class FoodItemController extends Controller
                 $calculator->profileFor($item->load('ingredients.ingredient'));
             });
         } catch (RecipeCycleException) {
-            return back()->withErrors(['ingredients' => 'Those ingredients form a cycle.'])->withInput();
+            return back()->withErrors(['ingredients' => __('library.cycle_error')])->withInput();
         }
 
-        return redirect()->route('library.index')->with('status', 'Recipe updated. Past entries are unchanged.');
+        return redirect()->route('library.index')->with('status', __('library.recipe_updated'));
     }
 
     public function destroy(FoodItem $item): RedirectResponse
@@ -148,12 +148,12 @@ class FoodItemController extends Controller
         // An item a recipe depends on cannot be deleted out from under it (the
         // database enforces this too); say so rather than letting it fail.
         if (RecipeIngredient::query()->where('ingredient_id', $item->id)->exists()) {
-            return back()->withErrors(['delete' => 'This item is used by a recipe; remove it there first.']);
+            return back()->withErrors(['delete' => __('library.in_use_error')]);
         }
 
         $item->delete();
 
-        return redirect()->route('library.index')->with('status', 'Item removed.');
+        return redirect()->route('library.index')->with('status', __('library.item_removed'));
     }
 
     public function merge(Request $request, FoodItem $item): RedirectResponse
@@ -188,7 +188,7 @@ class FoodItemController extends Controller
             $item->delete();
         });
 
-        return redirect()->route('library.index')->with('status', 'Duplicates merged.');
+        return redirect()->route('library.index')->with('status', __('library.duplicates_merged'));
     }
 
     /**

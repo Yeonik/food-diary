@@ -44,4 +44,14 @@ return [
     'remove' => 'Remove',
     'add_ingredient' => '+ Add ingredient',
     'save_recipe' => 'Save recipe',
+
+    // Outcomes.
+    'item_added' => 'Item added to the library.',
+    'item_corrected' => 'Item corrected. Past entries are unchanged.',
+    'item_removed' => 'Item removed.',
+    'recipe_saved' => 'Recipe ":name" saved.',
+    'recipe_updated' => 'Recipe updated. Past entries are unchanged.',
+    'duplicates_merged' => 'Duplicates merged.',
+    'cycle_error' => 'Those ingredients form a cycle.',
+    'in_use_error' => 'This item is used by a recipe; remove it there first.',
 ];

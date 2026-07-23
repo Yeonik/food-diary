@@ -50,13 +50,13 @@ class WeightController extends Controller
             ['weight_kg' => $validated['weight_kg']],
         );
 
-        return redirect()->route('weight.index')->with('status', 'Weight recorded.');
+        return redirect()->route('weight.index')->with('status', __('weight.recorded'));
     }
 
     public function destroy(WeightEntry $entry): RedirectResponse
     {
         $entry->delete();
 
-        return redirect()->route('weight.index')->with('status', 'Reading removed.');
+        return redirect()->route('weight.index')->with('status', __('weight.removed'));
     }
 }

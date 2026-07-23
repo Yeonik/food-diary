@@ -42,7 +42,7 @@ class MealEntryController extends Controller
 
         return redirect()
             ->route('diary.index', ['date' => $entry->logged_at->toDateString()])
-            ->with('status', 'Entry updated.');
+            ->with('status', __('entries.updated'));
     }
 
     public function destroy(MealEntry $entry): RedirectResponse
@@ -52,6 +52,6 @@ class MealEntryController extends Controller
 
         return redirect()
             ->route('diary.index', ['date' => $date])
-            ->with('status', 'Entry deleted.');
+            ->with('status', __('entries.deleted'));
     }
 }

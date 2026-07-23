@@ -14,4 +14,6 @@ return [
     'empty_body' => 'Add your first reading to see the trend.',
     'confirm_delete' => 'Remove this reading?',
     'chart_label' => 'Weight over time',
+    'recorded' => 'Weight recorded.',
+    'removed' => 'Reading removed.',
 ];
