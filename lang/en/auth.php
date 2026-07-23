@@ -17,6 +17,9 @@ return [
     'password_hint' => 'At least 8 characters',
     'remember' => 'Stay signed in',
 
+    // Before the account exists, not once a photo is being uploaded.
+    'register_privacy' => "If you log a meal by photograph, that photo is sent to Google's Gemini API to be recognised. Its EXIF metadata, including GPS, is stripped before it leaves this machine, and the file is deleted once you confirm the entry. Entering a meal by hand or by barcode sends no photograph anywhere.",
+
     'invite_code' => 'Invite code',
     'invite_hint' => 'Registration is by invitation only',
     // Unknown, expired and already used all say this — the refusal does not

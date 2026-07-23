@@ -24,7 +24,12 @@
             <x-field type="password" name="password_confirmation" :label="__('auth.password_confirm')"
                      autocomplete="new-password" required />
 
-            <x-button type="submit" full style="margin-top:22px">{{ __('auth.register_submit') }}</x-button>
+            {{-- Said here, before there is an account, and not only on the
+                 screen that uploads a photo: by then the choice has been made.
+                 Plain text on the page, not a link to a policy. --}}
+            <p class="caption" style="margin-top:18px">{{ __('auth.register_privacy') }}</p>
+
+            <x-button type="submit" full style="margin-top:14px">{{ __('auth.register_submit') }}</x-button>
         </form>
     </div>
 @endsection
