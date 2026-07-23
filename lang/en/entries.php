@@ -10,4 +10,5 @@ return [
     'grams' => 'Grams',
     'updated' => 'Entry updated.',
     'deleted' => 'Entry deleted.',
+    'in_this_portion' => 'In this portion',
 ];
