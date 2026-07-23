@@ -102,6 +102,18 @@
             </form>
         </x-card>
 
+        {{-- Only the owner has anywhere to go from here, and only the owner sees
+             it. The link is a convenience; the gate on the route is the rule. --}}
+        @can(\App\Providers\AppServiceProvider::ADMINISTER_INVITES)
+            <x-card class="set-row" style="margin-bottom:16px">
+                <span>
+                    <span class="t">{{ __('invites.settings_link') }}</span>
+                    <span class="s" style="display:block">{{ __('invites.settings_hint') }}</span>
+                </span>
+                <x-button variant="secondary" :href="route('invites.index')">{{ __('invites.open') }}</x-button>
+            </x-card>
+        @endcan
+
         {{-- Language. Two submit buttons post the choice; it is saved in a cookie
              and the redirect back re-renders at once. Works without JavaScript. --}}
         <x-card class="set-row">

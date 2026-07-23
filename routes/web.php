@@ -7,12 +7,14 @@ use App\Http\Controllers\DiaryController;
 use App\Http\Controllers\FoodItemController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\InviteController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ManualEntryController;
 use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\MealPhotoController;
 use App\Http\Controllers\PendingLogController;
 use App\Http\Controllers\WeightController;
+use App\Providers\AppServiceProvider;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -72,6 +74,15 @@ Route::middleware('auth')->group(function (): void {
     // Goal
     Route::get('/goal', [GoalController::class, 'edit'])->name('goal.edit');
     Route::patch('/goal', [GoalController::class, 'update'])->name('goal.update');
+
+    // Invitations — the owner's, and only the owner's. The gate wraps the group
+    // rather than each route, for the same reason `auth` wraps everything above:
+    // a route added here later is behind it because of where it lives.
+    Route::middleware('can:'.AppServiceProvider::ADMINISTER_INVITES)->group(function (): void {
+        Route::get('/invites', [InviteController::class, 'index'])->name('invites.index');
+        Route::post('/invites', [InviteController::class, 'store'])->name('invites.store');
+        Route::delete('/invites/{invite}', [InviteController::class, 'destroy'])->name('invites.destroy');
+    });
 
 });
 

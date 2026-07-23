@@ -40,12 +40,21 @@ final class OwnerAccount
         $existing = User::query()->where('email', $email)->first();
 
         if ($existing !== null) {
+            // Marked if it is not already. This is not the rewrite the class
+            // refuses to do — the password and the name are left exactly as the
+            // owner has since made them. It says who the owner is, which is the
+            // one thing this class exists to establish, and the authorisation
+            // gate reads it rather than guessing from an id.
+            if (! $existing->isOwner()) {
+                $existing->forceFill(['is_owner' => true])->save();
+            }
+
             return $existing;
         }
 
         $name = config('nutrition.owner.name');
 
-        return User::query()->create([
+        $owner = User::query()->create([
             // Not a translated default: a stored name does not follow the
             // interface language, and the owner can change it later anyway.
             'name' => is_string($name) && trim($name) !== ''
@@ -57,6 +66,13 @@ final class OwnerAccount
             // interpolated into a message, an exception or a log line.
             'password' => self::required('password', 'OWNER_PASSWORD'),
         ]);
+
+        // Set apart from the create() above, because `is_owner` is not fillable:
+        // registration mass-assigns a request into a user, and nothing arriving
+        // from a form may name this column.
+        $owner->forceFill(['is_owner' => true])->save();
+
+        return $owner;
     }
 
     /**

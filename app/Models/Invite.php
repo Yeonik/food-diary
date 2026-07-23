@@ -38,6 +38,7 @@ class Invite extends Model
         'used_by',
         'expires_at',
         'used_at',
+        'revoked_at',
     ];
 
     /**
@@ -48,6 +49,7 @@ class Invite extends Model
         return [
             'expires_at' => 'immutable_datetime',
             'used_at' => 'immutable_datetime',
+            'revoked_at' => 'immutable_datetime',
         ];
     }
 
@@ -94,6 +96,7 @@ class Invite extends Model
         $spent = static::query()
             ->where('token_hash', self::digestOf($code))
             ->whereNull('used_at')
+            ->whereNull('revoked_at')
             ->where(function (QueryBuilder $unexpired) use ($now): void {
                 $unexpired->whereNull('expires_at')->orWhere('expires_at', '>', $now);
             })
@@ -103,6 +106,44 @@ class Invite extends Model
             ]);
 
         return $spent === 1;
+    }
+
+    /**
+     * Withdraw an invitation that has not been used. True if this call withdrew
+     * it.
+     *
+     * Conditional for the same reason spending is: an invitation being redeemed
+     * at the moment it is revoked must resolve one way, not both. Whichever
+     * statement lands first wins, and the other changes nothing.
+     *
+     * A spent code is not revocable — there is an account behind it now, and the
+     * way to withdraw that is to remove the account, not to edit the paperwork.
+     */
+    public function revoke(): bool
+    {
+        $withdrawn = static::query()
+            ->whereKey($this->getKey())
+            ->whereNull('used_at')
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => CarbonImmutable::now()]);
+
+        return $withdrawn === 1;
+    }
+
+    /**
+     * What this invitation is: one of `spent`, `revoked`, `expired`, `open`.
+     *
+     * Read in that order on purpose — a code that was used is described as used
+     * even once its expiry date has passed, because that is what happened to it.
+     */
+    public function state(): string
+    {
+        return match (true) {
+            $this->used_at !== null => 'spent',
+            $this->revoked_at !== null => 'revoked',
+            $this->expires_at !== null && $this->expires_at->isPast() => 'expired',
+            default => 'open',
+        };
     }
 
     /**
