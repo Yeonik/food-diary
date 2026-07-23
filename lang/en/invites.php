@@ -22,6 +22,9 @@ return [
         'expired' => 'Expired',
     ],
 
+    'recognitions_today' => 'Recognitions today',
+    'recognitions_hint' => 'Everybody, on the shared key. :limit per account per day.',
+
     'open' => 'Open',
     'settings_link' => 'Invitations',
     'settings_hint' => 'Who can create an account',

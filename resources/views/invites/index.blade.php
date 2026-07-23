@@ -23,6 +23,17 @@
             <x-button type="submit">{{ __('invites.issue') }}</x-button>
         </form>
 
+        {{-- The load on the shared key today, as one number. Not per person:
+             the owner pays for the key, which is a different thing from being
+             able to watch what anybody is eating. --}}
+        <x-card class="set-row" style="margin-bottom:16px">
+            <span>
+                <span class="t">{{ __('invites.recognitions_today') }}</span>
+                <span class="s" style="display:block">{{ __('invites.recognitions_hint', ['limit' => $dailyLimit]) }}</span>
+            </span>
+            <span class="usage-total">{{ $recognisedToday }}</span>
+        </x-card>
+
         @forelse ($invites as $invite)
             <x-card style="margin-bottom:10px">
                 <div class="account-row">

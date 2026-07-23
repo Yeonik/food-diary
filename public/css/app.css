@@ -417,6 +417,8 @@ select.field { cursor: pointer; }
     margin: 8px 0;
 }
 
+.usage-total { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
 /* --- Settings --------------------------------------------------------------- */
 
 .settings { max-width: 560px; display: flex; flex-direction: column; gap: 16px; }

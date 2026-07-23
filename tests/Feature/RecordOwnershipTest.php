@@ -41,6 +41,7 @@ class RecordOwnershipTest extends TestCase
             'meal entries' => ['meal_entries'],
             'weight entries' => ['weight_entries'],
             'goals' => ['goals'],
+            'recognitions' => ['recognitions'],
         ];
     }
 

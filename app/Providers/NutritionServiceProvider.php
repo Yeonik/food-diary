@@ -9,6 +9,8 @@ use App\Nutrition\FoodResolver;
 use App\Nutrition\PhotoPreparer;
 use App\Nutrition\Recognisers\FakeRecogniser;
 use App\Nutrition\Recognisers\GeminiRecogniser;
+use App\Nutrition\Recognisers\MeteredRecogniser;
+use App\Nutrition\RecognitionQuota;
 use App\Nutrition\Sources\OpenFoodFactsSource;
 use App\Nutrition\Sources\PersonalLibrarySource;
 use App\Nutrition\Sources\UsdaSource;
@@ -30,16 +32,19 @@ class NutritionServiceProvider extends ServiceProvider
             // can have — worse than an invented number, it is an invented meal.
             // So outside the test suite the real recogniser is ALWAYS used, and
             // a missing or invalid key fails loudly rather than falling back.
-            if ($app->environment('testing')) {
-                return new FakeRecogniser;
-            }
+            $recogniser = $app->environment('testing')
+                ? new FakeRecogniser
+                : new GeminiRecogniser(
+                    $this->string('nutrition.gemini.base_url'),
+                    $this->string('nutrition.gemini.model'),
+                    $this->nullableString('nutrition.gemini.key'),
+                    (int) config('nutrition.gemini.timeout', 60),
+                );
 
-            return new GeminiRecogniser(
-                $this->string('nutrition.gemini.base_url'),
-                $this->string('nutrition.gemini.model'),
-                $this->nullableString('nutrition.gemini.key'),
-                (int) config('nutrition.gemini.timeout', 60),
-            );
+            // Metered in every environment, the fake included. The quota is part
+            // of what recognition *is* here, not a production-only wrapper — a
+            // suite that ran without it could not tell whether the limit works.
+            return new MeteredRecogniser($recogniser, $app->make(RecognitionQuota::class));
         });
 
         // Bound once so the barcode lookup path (a controller) and the resolver

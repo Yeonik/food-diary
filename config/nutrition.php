@@ -38,6 +38,19 @@ return [
         'timeout' => (int) env('GEMINI_TIMEOUT', 60),
     ],
 
+    /*
+    | Recognitions one account may ask for in a day. There is one API key on the
+    | installation and one bill behind it, and every account spends from it.
+    |
+    | Counted when a recognition is asked for, not when it succeeds: a failed
+    | call costs the key what a good one costs. Zero is read as a deliberate off
+    | switch — nobody recognises anything — and not as "no limit", because a
+    | misread setting must never be the one that removes the limit.
+    */
+    'recognition' => [
+        'daily_limit' => (int) env('RECOGNITION_DAILY_LIMIT', 25),
+    ],
+
     'usda' => [
         'base_url' => env('USDA_BASE_URL', 'https://api.nal.usda.gov/fdc/v1'),
         // Free key from api.data.gov. Sent as a header, never in a URL.

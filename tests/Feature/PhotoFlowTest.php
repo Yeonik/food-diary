@@ -12,6 +12,7 @@ use App\Nutrition\MealType;
 use App\Nutrition\NutrientSource;
 use App\Nutrition\PhotoPreparer;
 use App\Nutrition\Recognisers\FakeRecogniser;
+use App\Nutrition\Recognisers\MeteredRecogniser;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -32,9 +33,13 @@ class PhotoFlowTest extends TestCase
         // owner when there is none — it lets the database refuse the row.
         $this->signIn();
 
-        // In the test environment the recogniser seam is the fake — no key, no call.
+        // In the test environment the recogniser seam is the fake — no key, no
+        // call. It sits behind the daily quota, which meters every environment
+        // including this one, so the thing to look at is what the meter is in
+        // front of.
         $recogniser = $this->app->make(FoodRecogniser::class);
-        $this->assertInstanceOf(FakeRecogniser::class, $recogniser);
+        $this->assertInstanceOf(MeteredRecogniser::class, $recogniser);
+        $this->assertInstanceOf(FakeRecogniser::class, $recogniser->inner);
 
         // The dishes the fake will name are already in the personal library, so
         // resolution answers from tier 1. The external APIs are faked empty only

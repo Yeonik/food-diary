@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Nutrition\Contracts\FoodRecogniser;
+use App\Nutrition\Exceptions\DailyLimitReachedException;
 use App\Nutrition\Exceptions\InvalidPhotoException;
 use App\Nutrition\Exceptions\RecognitionFailedException;
 use App\Nutrition\MealLogService;
@@ -42,6 +43,18 @@ class MealPhotoController extends Controller
             // The client filename is never touched; the preparer generates its own.
             $prepared = $preparer->prepare($file->getPathname(), storage_path('app/private/photos'));
             $items = $recogniser->recognise($prepared);
+        } catch (DailyLimitReachedException $e) {
+            if (isset($prepared)) {
+                @unlink($prepared->path);
+            }
+
+            // Its own arm, with its own words. Nothing failed here and nothing
+            // is worth retrying — saying "try again later", or anything that
+            // sounds like the recogniser is down, would send somebody to look at
+            // a problem that is not theirs and does not exist.
+            return back()->withErrors([
+                'photo' => __('photo.limit_reached', ['limit' => $e->limit]),
+            ]);
         } catch (InvalidPhotoException $e) {
             return back()->withErrors(['photo' => $e->getMessage()]);
         } catch (RecognitionFailedException $e) {

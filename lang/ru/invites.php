@@ -22,6 +22,9 @@ return [
         'expired' => 'Просрочено',
     ],
 
+    'recognitions_today' => 'Распознаваний сегодня',
+    'recognitions_hint' => 'Все вместе, на общем ключе. :limit в сутки на аккаунт.',
+
     'open' => 'Открыть',
     'settings_link' => 'Приглашения',
     'settings_hint' => 'Кто может завести аккаунт',
