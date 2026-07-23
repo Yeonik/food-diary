@@ -8,7 +8,6 @@ use App\Models\FoodItem;
 use App\Models\FoodItemAlias;
 use App\Models\Goal;
 use App\Models\MealEntry;
-use App\Models\RecipeIngredient;
 use App\Models\User;
 use App\Models\WeightEntry;
 use Illuminate\Database\QueryException;
@@ -54,10 +53,16 @@ class RecordOwnershipTest extends TestCase
         $this->assertNotNull($column, "{$table} has no user_id column at all.");
         $this->assertSame(1, (int) $column->notnull, "{$table}.user_id is still nullable.");
 
-        $key = collect(DB::select("pragma foreign_key_list({$table})"))->firstWhere('from', 'user_id');
+        // One row per column per key, so `user_id` can appear more than once:
+        // on two tables it is also the second half of a composite key naming the
+        // owner of a food item. The one wanted here is the key that is user_id
+        // and nothing else.
+        $key = collect(DB::select("pragma foreign_key_list({$table})"))
+            ->groupBy('id')
+            ->first(fn ($columns) => $columns->count() === 1 && $columns->first()->from === 'user_id');
 
         $this->assertNotNull($key, "{$table}.user_id is not a foreign key, so it can name an account that does not exist.");
-        $this->assertSame('users', $key->table);
+        $this->assertSame('users', $key->first()->table);
     }
 
     #[DataProvider('domainTables')]
@@ -123,29 +128,64 @@ class RecordOwnershipTest extends TestCase
         }
     }
 
-    public function test_a_child_row_carries_the_same_owner_as_its_parent(): void
+    public function test_an_alias_carries_the_same_owner_as_the_item_it_names(): void
     {
-        // Aliases and recipe lines keep their own user_id rather than reaching
-        // through the parent, so the two could in principle disagree. Through the
-        // app they cannot: both are written by the same signed-in person.
+        // An alias keeps its own user_id rather than reaching through the item,
+        // so the two could in principle disagree. Through the app they cannot:
+        // both are written by the same signed-in person. This one is still the
+        // application's word — `food_item_aliases` has a plain key on the item,
+        // not a composite one, so nothing underneath is holding it.
         $user = $this->signIn();
 
+        $item = FoodItem::factory()->create();
+        $alias = FoodItemAlias::query()->create([
+            'food_item_id' => $item->id,
+            'name' => 'another name for it',
+        ]);
+
+        $this->assertSame($item->user_id, $alias->user_id);
+        $this->assertSame($user->id, $alias->user_id);
+    }
+
+    public function test_a_recipe_line_disagreeing_with_its_recipe_is_refused_by_the_database(): void
+    {
+        // The same invariant for recipe lines, held from underneath instead of
+        // by the application agreeing with itself. `(recipe_id, user_id)` is one
+        // key, so a line naming this recipe has to name this recipe's owner too.
+        $this->signIn();
         $recipe = FoodItem::factory()->recipe()->create();
         $ingredient = FoodItem::factory()->create();
 
-        $line = RecipeIngredient::query()->create([
+        $somebodyElse = User::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        // Through the query builder: no model, no scope, no validation rule —
+        // just the row and the table's opinion of it.
+        DB::table('recipe_ingredients')->insert([
+            'user_id' => $somebodyElse->id,
             'recipe_id' => $recipe->id,
             'ingredient_id' => $ingredient->id,
             'grams' => 200,
         ]);
-        $alias = FoodItemAlias::query()->create([
-            'food_item_id' => $ingredient->id,
-            'name' => 'another name for it',
-        ]);
+    }
 
-        $this->assertSame($recipe->user_id, $line->user_id);
-        $this->assertSame($ingredient->user_id, $alias->user_id);
-        $this->assertSame($user->id, $line->user_id);
+    public function test_a_recipe_line_naming_another_persons_ingredient_is_refused_by_the_database(): void
+    {
+        $this->signIn();
+        $recipe = FoodItem::factory()->recipe()->create();
+
+        $this->signIn(User::factory()->create());
+        $theirIngredient = FoodItem::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('recipe_ingredients')->insert([
+            'user_id' => $recipe->user_id,
+            'recipe_id' => $recipe->id,
+            'ingredient_id' => $theirIngredient->id,
+            'grams' => 200,
+        ]);
     }
 
     public function test_nothing_is_written_when_nobody_is_signed_in(): void
