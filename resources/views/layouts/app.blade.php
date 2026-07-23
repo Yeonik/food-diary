@@ -44,6 +44,10 @@
         // it has entries yet: they are the only route to the barcode path, and an
         // empty day is exactly when a first entry gets made.
         $onDay = request()->routeIs('diary.*');
+
+        // Behind the gate there is nowhere to navigate to: every section bounces
+        // back here, so offering them would be a rail that goes nowhere.
+        $locked = request()->routeIs('unlock*');
     @endphp
 
     <div class="app">
@@ -53,9 +57,11 @@
                 <div class="logo" aria-hidden="true">{{ mb_substr(__('nav.brand'), 0, 1) }}</div>
                 <b>{{ __('nav.brand') }}</b>
             </div>
-            @foreach ($nav as $item)
-                <x-nav-item :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
-            @endforeach
+            @unless ($locked)
+                @foreach ($nav as $item)
+                    <x-nav-item :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
+                @endforeach
+            @endunless
             <div class="side-spacer"></div>
         </nav>
 
@@ -105,11 +111,13 @@
             </main>
 
             {{-- Mobile: bottom tab bar --}}
-            <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
-                @foreach ($nav as $item)
-                    <x-nav-item layout="tab" :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
-                @endforeach
-            </nav>
+            @unless ($locked)
+                <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
+                    @foreach ($nav as $item)
+                        <x-nav-item layout="tab" :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
+                    @endforeach
+                </nav>
+            @endunless
 
             {{-- Mobile: the floating action button, on the day screen only. A
                  <details>, so the menu opens with JavaScript off. --}}

@@ -34,7 +34,9 @@ class AccessController extends Controller
             return redirect()->intended(route('diary.index'));
         }
 
-        return back()->withErrors(['password' => 'That password does not match.']);
+        // The same answer for a wrong password and an unconfigured gate: the
+        // screen never distinguishes them, and never says which part was wrong.
+        return back()->withErrors(['password' => __('access.wrong_password')]);
     }
 
     /**
