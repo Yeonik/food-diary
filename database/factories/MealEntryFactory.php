@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\MealEntry;
+use App\Models\User;
 use App\Nutrition\MealType;
 use App\Nutrition\NutrientSource;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,6 +23,9 @@ class MealEntryFactory extends Factory
     public function definition(): array
     {
         return [
+            // Whoever is signed in owns it; with nobody signed in the factory
+            // makes an account rather than leaving a record with no owner.
+            'user_id' => auth()->id() ?? User::factory(),
             'logged_at' => fake()->dateTimeBetween('-1 month'),
             'meal' => fake()->randomElement(MealType::cases())->value,
             'name' => fake()->words(2, true),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use App\Nutrition\MealType;
 use Database\Factories\GoalFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,9 +31,10 @@ use Illuminate\Database\Eloquent\Model;
 class Goal extends Model
 {
     /** @use HasFactory<GoalFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
+        'user_id',
         'daily_kcal',
         'protein_g',
         'fat_g',

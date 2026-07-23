@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Carbon\CarbonInterface;
 use Database\Factories\WeightEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,9 +20,10 @@ use Illuminate\Database\Eloquent\Model;
 class WeightEntry extends Model
 {
     /** @use HasFactory<WeightEntryFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
+        'user_id',
         'recorded_on',
         'weight_kg',
     ];

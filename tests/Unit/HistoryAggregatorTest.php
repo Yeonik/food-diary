@@ -21,6 +21,9 @@ class HistoryAggregatorTest extends TestCase
     private function entry(string $date, float $kcal): MealEntry
     {
         return MealEntry::factory()->make([
+            // Given rather than resolved: these models are never saved, and the
+            // factory's default would go and create an account for each one.
+            'user_id' => 1,
             'logged_at' => $date.' 12:00:00',
             'kcal' => $kcal,
             'protein_g' => 0,

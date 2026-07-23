@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\FoodItem;
+use App\Models\User;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\ProfileOrigin;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,6 +23,9 @@ class FoodItemFactory extends Factory
     public function definition(): array
     {
         return [
+            // Whoever is signed in owns it; with nobody signed in the factory
+            // makes an account rather than leaving a record with no owner.
+            'user_id' => auth()->id() ?? User::factory(),
             'name' => fake()->unique()->words(2, true),
             'alt_name' => null,
             'kind' => FoodItemKind::Direct->value,

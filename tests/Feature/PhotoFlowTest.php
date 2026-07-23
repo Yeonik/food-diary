@@ -28,6 +28,10 @@ class PhotoFlowTest extends TestCase
 
     public function test_photo_to_logged_entry_runs_with_no_network_and_no_key(): void
     {
+        // A photo is logged by somebody. The service layer no longer invents an
+        // owner when there is none — it lets the database refuse the row.
+        $this->signIn();
+
         // In the test environment the recogniser seam is the fake — no key, no call.
         $recogniser = $this->app->make(FoodRecogniser::class);
         $this->assertInstanceOf(FakeRecogniser::class, $recogniser);

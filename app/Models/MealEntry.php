@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use App\Nutrition\MealType;
 use App\Nutrition\NutrientSource;
 use App\Nutrition\PortionTotals;
@@ -33,9 +34,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MealEntry extends Model
 {
     /** @use HasFactory<MealEntryFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
+        'user_id',
         'logged_at',
         'meal',
         'name',

@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\FoodItem;
 use App\Models\RecipeIngredient;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,6 +22,9 @@ class RecipeIngredientFactory extends Factory
     public function definition(): array
     {
         return [
+            // Whoever is signed in owns it; with nobody signed in the factory
+            // makes an account rather than leaving a record with no owner.
+            'user_id' => auth()->id() ?? User::factory(),
             'recipe_id' => FoodItem::factory()->recipe(),
             'ingredient_id' => FoodItem::factory(),
             'grams' => fake()->randomFloat(1, 10, 500),

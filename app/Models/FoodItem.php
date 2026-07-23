@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\NutrientProfile;
 use App\Nutrition\NutrientSource;
@@ -31,9 +32,10 @@ use RuntimeException;
 class FoodItem extends Model
 {
     /** @use HasFactory<FoodItemFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
+        'user_id',
         'name',
         'alt_name',
         'kind',

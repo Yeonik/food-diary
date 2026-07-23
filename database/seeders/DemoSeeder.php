@@ -9,6 +9,7 @@ use App\Models\FoodItemAlias;
 use App\Models\Goal;
 use App\Models\MealEntry;
 use App\Models\RecipeIngredient;
+use App\Models\User;
 use App\Models\WeightEntry;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\MealType;
@@ -16,6 +17,7 @@ use App\Nutrition\NutrientSource;
 use App\Nutrition\ProfileOrigin;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -43,6 +45,16 @@ class DemoSeeder extends Seeder
 
         $today = CarbonImmutable::today();
 
+        // Everything now belongs to somebody, so the demo needs an account to
+        // belong to — and a reviewer needs credentials to see any of it. Local
+        // only, guarded above, so this pair is a fixture and not a secret.
+        $demo = User::query()->firstOrCreate(
+            ['email' => 'demo@example.test'],
+            ['name' => 'Demo', 'password' => 'demo-password'],
+        );
+
+        Auth::login($demo);
+
         DB::transaction(function () use ($today): void {
             $this->reset();
             $this->seedGoal();
@@ -51,6 +63,7 @@ class DemoSeeder extends Seeder
             $this->seedWeightSeries($today);
         });
 
+        $this->command?->info('Sign in as demo@example.test with the password demo-password.');
         $this->command?->info('Demo data seeded: goal, an over-goal day across all meals and provenances, a library with a recipe, and two weeks of weight.');
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\RecipeIngredientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,9 +22,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RecipeIngredient extends Model
 {
     /** @use HasFactory<RecipeIngredientFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
+        'user_id',
         'recipe_id',
         'ingredient_id',
         'grams',
