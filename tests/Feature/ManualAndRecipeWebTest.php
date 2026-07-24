@@ -36,9 +36,12 @@ class ManualAndRecipeWebTest extends TestCase
         $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create(['name' => 'Rice']);
         $chicken = FoodItem::factory()->direct(kcal: 165, protein: 31, fat: 3.6, carbs: 0)->create(['name' => 'Chicken']);
 
-        // Define the recipe through the form.
+        // Define the recipe through the form, cooked weight included — the form
+        // requires it now.
         $this->post(route('library.recipe.store'), [
             'name' => 'Plov',
+            // 300 g of raw ingredients, but plov absorbs water: 400 g cooked.
+            'cooked_weight_g' => 400,
             'ingredients' => [
                 ['item_id' => $rice->id, 'grams' => 200],
                 ['item_id' => $chicken->id, 'grams' => 100],
@@ -48,6 +51,7 @@ class ManualAndRecipeWebTest extends TestCase
         $recipe = FoodItem::query()->where('name', 'Plov')->firstOrFail();
         $this->assertSame(FoodItemKind::Recipe, $recipe->kind);
         $this->assertSame(2, $recipe->ingredients()->count());
+        $this->assertSame(400.0, $recipe->cooked_weight_g);
 
         // Log it via the manual path.
         $this->fakeEmptyApis();
@@ -56,12 +60,14 @@ class ManualAndRecipeWebTest extends TestCase
 
         $this->post(route('log.confirm.store'), [
             'meal' => 'dinner',
-            'items' => [['candidate' => 0, 'grams' => 300]],
+            'items' => [['candidate' => 0, 'grams' => 400]],
         ])->assertRedirect();
 
         $entry = MealEntry::query()->where('name', 'Plov')->firstOrFail();
         $this->assertSame(NutrientSource::PersonalLibrary, $entry->source);
-        // 300 g of the recipe ≈ its whole 300 g batch: 425 kcal.
+        // The whole 400 g cooked dish is the whole batch: 130*2 + 165 = 425 kcal.
+        // Divided by the raw 300 g it would have read 566 for the same plate —
+        // the overstatement this change removes.
         $this->assertEqualsWithDelta(425.0, $entry->kcal, 0.5);
     }
 
@@ -75,6 +81,7 @@ class ManualAndRecipeWebTest extends TestCase
         $this->from(route('library.recipe.edit', $recipe))
             ->patch(route('library.recipe.update', $recipe), [
                 'name' => 'Dough',
+                'cooked_weight_g' => 200,
                 'ingredients' => [['item_id' => $recipe->id, 'grams' => 100]],
             ])
             ->assertRedirect(route('library.recipe.edit', $recipe))

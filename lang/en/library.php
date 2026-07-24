@@ -43,6 +43,13 @@ return [
     'add_ingredient' => 'Add ingredient',
     'save_recipe' => 'Save recipe',
 
+    // The cooked weight — the divisor, and the reason the recipe's numbers are
+    // honest. The hint names what to weigh (the finished dish) and, when there
+    // are ingredients, shows their raw total for comparison only.
+    'cooked_weight' => 'Cooked weight, g',
+    'cooked_weight_hint' => 'Weigh the finished dish, after cooking — that is what the numbers are per 100 g of.',
+    'cooked_weight_hint_raw' => 'Weigh the finished dish, after cooking. Ingredients come to :grams g raw, for comparison.',
+
     // Outcomes.
     'item_added' => 'Item added to the library.',
     'item_corrected' => 'Item corrected. Past entries are unchanged.',
@@ -51,6 +58,7 @@ return [
     'recipe_updated' => 'Recipe updated. Past entries are unchanged.',
     'duplicates_merged' => 'Duplicates merged.',
     'cycle_error' => 'Those ingredients form a cycle.',
+    'ingredient_needs_cooked_weight' => 'One of the recipes used as an ingredient has no cooked weight yet. Give it one first.',
     'in_use_error' => 'This item is used by a recipe; remove it there first.',
     'manual_is_verified' => 'A product you enter by hand counts as verified — you read the numbers, the model did not invent them.',
     'recipe_total' => 'Per 100 g',

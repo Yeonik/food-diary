@@ -8,6 +8,7 @@ use App\Models\FoodItem;
 use App\Models\MealEntry;
 use App\Models\RecipeIngredient;
 use App\Nutrition\Exceptions\RecipeCycleException;
+use App\Nutrition\Exceptions\RecipeIncompleteException;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\ProfileOrigin;
 use App\Nutrition\RecipeCalculator;
@@ -48,8 +49,10 @@ class FoodItemController extends Controller
 
             try {
                 $recipeKcal[$item->id] = $calculator->profileFor($item)->kcal;
-            } catch (RecipeCycleException) {
+            } catch (RecipeCycleException|RecipeIncompleteException) {
                 // Left out on purpose: no number is better than a wrong one.
+                // A recipe missing its cooked weight lands here too — the row is
+                // drawn without a figure, and the next commit says why on it.
             }
         }
 
@@ -107,6 +110,8 @@ class FoodItemController extends Controller
             'recipe' => null,
             'ingredients' => FoodItem::query()->orderBy('name')->get(),
             'total' => null,
+            // No ingredients yet, so no raw sum to compare against.
+            'rawSum' => null,
         ]);
     }
 
@@ -119,6 +124,7 @@ class FoodItemController extends Controller
                 $recipe = FoodItem::create([
                     'name' => $validated['name'],
                     'kind' => FoodItemKind::Recipe->value,
+                    'cooked_weight_g' => $validated['cooked_weight_g'],
                 ]);
 
                 $this->syncIngredients($recipe, $validated['ingredients']);
@@ -131,6 +137,11 @@ class FoodItemController extends Controller
             });
         } catch (RecipeCycleException) {
             return back()->withErrors(['ingredients' => __('library.cycle_error')])->withInput();
+        } catch (RecipeIncompleteException) {
+            // This recipe has a cooked weight — validation required it — so the
+            // one missing it is an ingredient recipe. Refuse rather than store a
+            // recipe that cannot be turned into a number.
+            return back()->withErrors(['ingredients' => __('library.ingredient_needs_cooked_weight')])->withInput();
         }
 
         return redirect()->route('library.index')->with('status', __('library.recipe_saved', ['name' => $recipe->name]));
@@ -145,7 +156,10 @@ class FoodItemController extends Controller
         // because a screen should not be the thing that fails.
         try {
             $total = $calculator->profileFor($item->load('ingredients.ingredient'));
-        } catch (RecipeCycleException) {
+        } catch (RecipeCycleException|RecipeIncompleteException) {
+            // No total to show: either a cycle, or a cooked weight missing here
+            // or in a recipe this one is built on. The form still opens so the
+            // weight can be supplied.
             $total = null;
         }
 
@@ -153,6 +167,12 @@ class FoodItemController extends Controller
             'recipe' => $item->load('ingredients'),
             'ingredients' => FoodItem::query()->where('id', '!=', $item->id)->orderBy('name')->get(),
             'total' => $total,
+            // The raw ingredient total, shown beside the cooked-weight field as a
+            // reference — not a constraint. A dish can weigh more or less than
+            // this, but seeing 300 g of ingredients makes a mistyped 30 g cooked
+            // weight obvious. Summed from the saved ingredients, so it is there
+            // with JavaScript off.
+            'rawSum' => $item->ingredients->sum('grams'),
         ]);
     }
 
@@ -164,7 +184,10 @@ class FoodItemController extends Controller
 
         try {
             DB::transaction(function () use ($item, $validated, $calculator): void {
-                $item->update(['name' => $validated['name']]);
+                $item->update([
+                    'name' => $validated['name'],
+                    'cooked_weight_g' => $validated['cooked_weight_g'],
+                ]);
                 $item->ingredients()->delete();
                 $this->syncIngredients($item, $validated['ingredients']);
 
@@ -172,6 +195,8 @@ class FoodItemController extends Controller
             });
         } catch (RecipeCycleException) {
             return back()->withErrors(['ingredients' => __('library.cycle_error')])->withInput();
+        } catch (RecipeIncompleteException) {
+            return back()->withErrors(['ingredients' => __('library.ingredient_needs_cooked_weight')])->withInput();
         }
 
         return redirect()->route('library.index')->with('status', __('library.recipe_updated'));
@@ -271,13 +296,27 @@ class FoodItemController extends Controller
     }
 
     /**
-     * @return array{name: string, ingredients: list<array{item_id: int, grams: float}>}
+     * @return array{name: string, cooked_weight_g: float, ingredients: list<array{item_id: int, grams: float}>}
      */
     private function validateRecipe(Request $request): array
     {
-        /** @var array{name: string, ingredients: list<array{item_id: int, grams: float}>} $validated */
+        // A comma decimal, the way the weight log already accepts one: a Russian
+        // keyboard offers a comma and half the scales in the world print one, so
+        // rejecting a correct weight over its punctuation would be its own bug.
+        $cooked = $request->input('cooked_weight_g');
+        if (is_string($cooked)) {
+            $request->merge(['cooked_weight_g' => str_replace(',', '.', trim($cooked))]);
+        }
+
+        /** @var array{name: string, cooked_weight_g: float, ingredients: list<array{item_id: int, grams: float}>} $validated */
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            // Required, and this is the point of the whole change: a recipe with
+            // no cooked weight has no honest number, so the form does not let one
+            // be defined without it. No upper bound tied to the ingredient sum —
+            // a dish both absorbs water and boils it off, so the cooked weight
+            // can legitimately sit either side of the raw total.
+            'cooked_weight_g' => ['required', 'numeric', 'min:0.1', 'max:20000'],
             'ingredients' => ['required', 'array', 'min:1'],
             // The same shape as the merge target: an id from the body, checked
             // against the whole table unless it is told whose table to look at.

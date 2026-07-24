@@ -88,6 +88,7 @@ class FlashMessageLocalizationTest extends TestCase
         $this->withCookie(SetLocale::COOKIE, 'ru')
             ->patch(route('library.recipe.update', $recipe), [
                 'name' => 'Борщ',
+                'cooked_weight_g' => 500,
                 'ingredients' => [['item_id' => $recipe->id, 'grams' => 100]],
             ])
             ->assertSessionHasErrors(['ingredients' => 'Эти ингредиенты образуют цикл.']);

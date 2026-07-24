@@ -254,6 +254,7 @@ class CrossUserIsolationTest extends TestCase
 
         $line = fn (int $id): array => [
             'name' => 'A recipe of mine',
+            'cooked_weight_g' => 100,
             'ingredients' => [['item_id' => $id, 'grams' => 100]],
         ];
 

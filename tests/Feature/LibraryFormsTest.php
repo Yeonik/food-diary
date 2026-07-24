@@ -110,12 +110,59 @@ class LibraryFormsTest extends TestCase
             ->assertDontSee('total-bar');
     }
 
+    public function test_a_recipe_cannot_be_saved_without_a_cooked_weight(): void
+    {
+        $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create();
+
+        // No cooked weight: the form refuses rather than storing a recipe whose
+        // only possible number would come from the wrong divisor.
+        $this->from(route('library.recipe.create'))
+            ->post(route('library.recipe.store'), [
+                'name' => 'No weight',
+                'ingredients' => [['item_id' => $rice->id, 'grams' => 200]],
+            ])
+            ->assertRedirect(route('library.recipe.create'))
+            ->assertSessionHasErrors('cooked_weight_g');
+
+        $this->assertSame(0, FoodItem::query()->where('name', 'No weight')->count());
+    }
+
+    public function test_a_cooked_weight_of_zero_is_refused(): void
+    {
+        $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create();
+
+        $this->from(route('library.recipe.create'))
+            ->post(route('library.recipe.store'), [
+                'name' => 'Zero weight',
+                'cooked_weight_g' => 0,
+                'ingredients' => [['item_id' => $rice->id, 'grams' => 200]],
+            ])
+            ->assertSessionHasErrors('cooked_weight_g');
+
+        $this->assertSame(0, FoodItem::query()->where('name', 'Zero weight')->count());
+    }
+
+    public function test_a_cooked_weight_typed_with_a_comma_is_accepted(): void
+    {
+        $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create();
+
+        // A Russian keyboard's decimal, the way the weight log already takes it.
+        $this->post(route('library.recipe.store'), [
+            'name' => 'Comma weight',
+            'cooked_weight_g' => '250,5',
+            'ingredients' => [['item_id' => $rice->id, 'grams' => 200]],
+        ])->assertRedirect(route('library.index'));
+
+        $this->assertSame(250.5, FoodItem::query()->where('name', 'Comma weight')->sole()->cooked_weight_g);
+    }
+
     public function test_a_recipe_that_would_reference_itself_is_refused(): void
     {
         $recipe = FoodItem::factory()->recipe()->create(['name' => 'Loop']);
 
         $this->patch(route('library.recipe.update', $recipe), [
             'name' => 'Loop',
+            'cooked_weight_g' => 500,
             'ingredients' => [['item_id' => $recipe->id, 'grams' => 100]],
         ])->assertSessionHasErrors('ingredients');
 

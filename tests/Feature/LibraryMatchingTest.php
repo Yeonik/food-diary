@@ -107,6 +107,28 @@ class LibraryMatchingTest extends TestCase
         $this->assertCount(5, $matches);
     }
 
+    public function test_an_incomplete_recipe_is_not_offered_as_a_candidate(): void
+    {
+        $rice = FoodItem::factory()->direct(kcal: 130, protein: 2.7, fat: 0.3, carbs: 28)->create();
+
+        // A recipe from before the cooked weight existed. It has no honest
+        // number, so it is not offered to log — and searching for it must not
+        // throw either, the way it would if the source computed its profile.
+        $incomplete = FoodItem::factory()->recipe(cookedWeightG: null)->create(['name' => 'Uncomputable stew']);
+        $incomplete->ingredients()->create(['ingredient_id' => $rice->id, 'grams' => 200]);
+
+        // A complete recipe by the same name proves the search itself works and
+        // it is incompleteness, not the query, that removes the other.
+        $complete = FoodItem::factory()->recipe(cookedWeightG: 300)->create(['name' => 'Uncomputable stew done']);
+        $complete->ingredients()->create(['ingredient_id' => $rice->id, 'grams' => 200]);
+
+        $matches = app(PersonalLibrarySource::class)->matchesFor(new SearchTerms('Uncomputable stew'));
+
+        $names = array_map(fn ($match) => $match->description, $matches);
+        $this->assertContains('Uncomputable stew done', $names);
+        $this->assertNotContains('Uncomputable stew', $names);
+    }
+
     public function test_matched_via_names_the_alias_that_surfaced_the_item(): void
     {
         $item = FoodItem::factory()->direct(kcal: 460, protein: 9, fat: 29, carbs: 42)

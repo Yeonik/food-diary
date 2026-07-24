@@ -6,6 +6,7 @@ namespace App\Nutrition\Sources;
 
 use App\Models\FoodItem;
 use App\Nutrition\Contracts\NutritionSource;
+use App\Nutrition\Exceptions\RecipeIncompleteException;
 use App\Nutrition\NameMatcher;
 use App\Nutrition\NutrientMatch;
 use App\Nutrition\NutrientSource;
@@ -80,9 +81,21 @@ class PersonalLibrarySource implements NutritionSource
             $item = $row['item'];
             $via = $row['best']['via'];
 
+            // A recipe with no cooked weight — its own, or one it is built on —
+            // has no honest number, so it is not offered as something to log.
+            // Skipped rather than shown greyed out: this is the confirm screen,
+            // where anything listed can be chosen, and a candidate that cannot
+            // produce a figure has no business there. It is still visible in the
+            // library, where it says it needs a weight.
+            try {
+                $profile = $item->isRecipe() ? $this->calculator->profileFor($item) : $item->storedProfile();
+            } catch (RecipeIncompleteException) {
+                continue;
+            }
+
             $matches[] = new NutrientMatch(
                 description: $item->name,
-                profile: $item->isRecipe() ? $this->calculator->profileFor($item) : $item->storedProfile(),
+                profile: $profile,
                 externalId: (string) $item->id,
                 // Only when the match came from something other than the shown
                 // name; the name is already on screen, so repeating it is noise.

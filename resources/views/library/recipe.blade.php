@@ -49,6 +49,21 @@
                 </button>
             </div>
 
+            {{-- The weight of the cooked dish, and the reason the numbers above
+                 can be trusted: they are divided by this, not by the raw
+                 ingredients, so a dish that absorbs or boils off water reads
+                 correctly. Weigh it after cooking. The raw total is shown only as
+                 a reference — a dish legitimately weighs more or less than its
+                 ingredients — so a mistyped weight stands out without being
+                 rejected. --}}
+            <x-field type="text" name="cooked_weight_g" inputmode="decimal"
+                     :label="__('library.cooked_weight')"
+                     :value="old('cooked_weight_g', $recipe?->cooked_weight_g)"
+                     :hint="isset($rawSum) && $rawSum > 0
+                        ? __('library.cooked_weight_hint_raw', ['grams' => \App\Support\Format::grams($rawSum)])
+                        : __('library.cooked_weight_hint')"
+                     required />
+
             @if ($total !== null)
                 {{-- What the ingredients above come to. A recipe stores no numbers
                      of its own; these are computed from them, which is why editing
