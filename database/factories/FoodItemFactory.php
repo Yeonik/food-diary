@@ -55,9 +55,15 @@ class FoodItemFactory extends Factory
     }
 
     /**
-     * A recipe: no stored profile, its numbers come from ingredient rows.
+     * A recipe: no stored profile, its numbers come from ingredient rows
+     * divided by the weight of the cooked dish.
+     *
+     * Complete by default — a usable recipe is the ordinary case a test means by
+     * "a recipe". Pass `cookedWeightG: null` for the other case: a recipe from
+     * before the cooked weight existed, or one whose owner has not supplied it
+     * yet, which yields no number until they do.
      */
-    public function recipe(): self
+    public function recipe(?float $cookedWeightG = 300.0): self
     {
         return $this->state(fn (): array => [
             'kind' => FoodItemKind::Recipe->value,
@@ -66,6 +72,7 @@ class FoodItemFactory extends Factory
             'protein_g_per_100g' => null,
             'fat_g_per_100g' => null,
             'carbs_g_per_100g' => null,
+            'cooked_weight_g' => $cookedWeightG,
         ]);
     }
 }

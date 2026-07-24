@@ -28,6 +28,7 @@ use RuntimeException;
  * @property float|null $protein_g_per_100g
  * @property float|null $fat_g_per_100g
  * @property float|null $carbs_g_per_100g
+ * @property float|null $cooked_weight_g
  */
 class FoodItem extends Model
 {
@@ -45,6 +46,7 @@ class FoodItem extends Model
         'protein_g_per_100g',
         'fat_g_per_100g',
         'carbs_g_per_100g',
+        'cooked_weight_g',
     ];
 
     /**
@@ -59,6 +61,7 @@ class FoodItem extends Model
             'protein_g_per_100g' => 'float',
             'fat_g_per_100g' => 'float',
             'carbs_g_per_100g' => 'float',
+            'cooked_weight_g' => 'float',
         ];
     }
 
@@ -86,6 +89,25 @@ class FoodItem extends Model
     public function isRecipe(): bool
     {
         return $this->kind === FoodItemKind::Recipe;
+    }
+
+    /**
+     * A recipe with no cooked weight cannot be turned into a number.
+     *
+     * This is the one thing this weight is for: without it the divisor is
+     * missing, so the recipe has no per-100 g profile to offer and must not be
+     * treated as if it did — not surfaced as a candidate, not stamped verified.
+     * The interface reads this to say so, and RecipeCalculator reads it to
+     * refuse rather than fall back to the sum of the raw ingredients, which is
+     * the wrong divisor this whole change exists to stop using.
+     *
+     * It says nothing about a recipe's ingredients referring to another recipe
+     * that is itself incomplete — that only surfaces when the profile is
+     * computed, so it lives there, not here.
+     */
+    public function needsCookedWeight(): bool
+    {
+        return $this->isRecipe() && $this->cooked_weight_g === null;
     }
 
     /**
