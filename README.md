@@ -232,11 +232,53 @@ connection, none of which can help. The owner sees one number: everybody's
 recognitions today. Not per person — paying for the key is a different thing from
 being able to watch what anybody eats.
 
+### Suspending, and the accounts screen
+
+The owner has one more screen: who has an account here. A name, an address,
+whether the account is suspended, and when it joined — and nothing else.
+Administering who may use the instance is not the power to read what they eat,
+and a test asserts that the roster shows no diary contents.
+
+**Suspension is reversible and takes nothing away.** `users.suspended_at` is one
+nullable column: null is active, a timestamp is suspended, so the state and the
+moment it began cannot disagree. Lifting it puts the person back exactly where
+they were — still signed in, nothing to redo.
+
+The refusal is **not** given at the sign-in screen, and that is deliberate.
+Turning away the credentials would mean answering one of two ways, and both are
+wrong: *these details do not match* is untrue when the password was right, and
+*this account is suspended* turns the form into an oracle for whether an address
+is real. So the credential boundary stays uniform, and the explanation is given
+past it, where the person has already proved who they are.
+
+The wall is a middleware on the whole web group, so Fortify's own routes are
+behind it too. It **whitelists** signing out and changing the language, and
+closes everything else — a route added anywhere later is shut to a suspended
+account by default rather than because somebody remembered the file. It reads
+`suspended_at` from the table by primary key rather than from the account object
+the session guard hands over: that object can be one resolved earlier and held in
+memory, and the test that signs in for real and then suspends through a different
+instance watched an established session walk straight through. How long a process
+lives is a property of the server, not a promise, so the boundary asks the
+database.
+
+The owner cannot suspend or delete their own account — that would leave an
+instance with nobody able to undo it. The screen offers nothing beside that row
+and the controller refuses it as well, because a button that is merely absent is
+not a rule.
+
+Deleting somebody else's account goes through a screen that names it, counts
+what would go, and asks for the address to be typed. The counts are read from the
+same list that does the deleting, so the warning cannot drift from what actually
+happens. It does not ask for the owner's password: that would prove only that the
+owner is present, which the session already says, where typing the address proves
+they mean this account and not the row above it.
+
 ### Leaving
 
 An account can be deleted from the settings screen, and it takes everything with
-it: entries, library, recipes, aliases, weight, goals, quota rows, and whatever
-was half-finished on the confirm screen, the photo on disk included. The password
+it: entries, library, recipes, aliases, weight, goals, quota rows, sessions, and
+whatever was half-finished on the confirm screen, the photo on disk included. The password
 is asked for because this cannot be undone, not because leaving is discouraged —
 there is no warning about losing progress, no offer to deactivate instead, and
 nothing kept back for later.
@@ -391,6 +433,7 @@ app/Nutrition/
   RecognitionQuota.php                a day's allowance, per account
   PhotoPreparer.php                   EXIF strip, resize, content validation
 app/Models/Concerns/BelongsToUser.php the owner scope, on every domain model
+app/Http/Middleware/BlockSuspended.php  the wall, closed by default
 app/Support/OwnerAccount.php          the owner, from configuration
 app/Support/AccountErasure.php        leaving, in the order the keys allow
 app/Models/  User, Invite, Recognition, FoodItem, RecipeIngredient, MealEntry,
