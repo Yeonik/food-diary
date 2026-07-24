@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Nutrition\Contracts\IngredientTranslator;
 use App\Nutrition\MealLogService;
 use App\Nutrition\NutrientSource;
 use App\Nutrition\SearchTerms;
@@ -38,7 +39,7 @@ class RecipeIngredientController extends Controller
     /**
      * Capture the form, resolve the typed name, and show the candidates.
      */
-    public function search(Request $request, MealLogService $log): RedirectResponse
+    public function search(Request $request, MealLogService $log, IngredientTranslator $translator): RedirectResponse
     {
         $validated = $request->validate([
             'query' => ['required', 'string', 'max:255'],
@@ -53,11 +54,23 @@ class RecipeIngredientController extends Controller
         );
         $request->session()->put(RecipeDraft::SESSION_KEY, $draft->toArray());
 
+        // A foreign ingredient name gets an English term for USDA, which indexes
+        // English and is the source that actually covers raw ingredients. The
+        // person still sees and stores the name they typed (it becomes the native
+        // term, which is what display() shows); only USDA is searched in English.
+        // Fails open: no translation just means USDA is searched with the
+        // original term, and the library and Open Food Facts answer regardless.
+        $query = $validated['query'];
+        $english = $translator->toEnglish($query);
+        $terms = $english !== null
+            ? new SearchTerms(english: $english, native: $query)
+            : new SearchTerms($query);
+
         // The same resolution the manual path uses: library first, then USDA and
         // Open Food Facts in parallel, nothing auto-selected. No estimate is
         // offered here — an ingredient must be a real number — so no fallback is
         // passed.
-        $pending = $log->pendingForName($validated['query']);
+        $pending = $log->pendingForTerms($terms);
 
         $request->session()->put(self::CANDIDATES_KEY, [
             'query' => $validated['query'],

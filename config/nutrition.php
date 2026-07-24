@@ -36,6 +36,10 @@ return [
         // Per-attempt timeout in seconds. A photo of a busy model can be slow to
         // answer, so this is generous; recognition retries a couple of times.
         'timeout' => (int) env('GEMINI_TIMEOUT', 60),
+        // Translating an ingredient name is a tiny text call, so it waits far
+        // less — and it fails open, so a slow one just falls back to the
+        // untranslated term rather than holding up the search.
+        'translate_timeout' => (int) env('GEMINI_TRANSLATE_TIMEOUT', 15),
     ],
 
     /*

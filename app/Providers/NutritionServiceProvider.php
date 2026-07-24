@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Nutrition\Contracts\FoodRecogniser;
+use App\Nutrition\Contracts\IngredientTranslator;
+use App\Nutrition\FakeIngredientTranslator;
 use App\Nutrition\FoodResolver;
+use App\Nutrition\GeminiIngredientTranslator;
 use App\Nutrition\PhotoPreparer;
 use App\Nutrition\Recognisers\FakeRecogniser;
 use App\Nutrition\Recognisers\GeminiRecogniser;
@@ -14,6 +17,7 @@ use App\Nutrition\RecognitionQuota;
 use App\Nutrition\Sources\OpenFoodFactsSource;
 use App\Nutrition\Sources\PersonalLibrarySource;
 use App\Nutrition\Sources\UsdaSource;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
@@ -45,6 +49,24 @@ class NutritionServiceProvider extends ServiceProvider
             // of what recognition *is* here, not a production-only wrapper — a
             // suite that ran without it could not tell whether the limit works.
             return new MeteredRecogniser($recogniser, $app->make(RecognitionQuota::class));
+        });
+
+        // Translating a foreign ingredient name for USDA. The fake, in the test
+        // suite, translates nothing unless a test seeds it — so CI makes no call
+        // and needs no key, the same seam the recogniser has. It is a singleton
+        // so a test can seed the one instance the controller will resolve.
+        $this->app->singleton(IngredientTranslator::class, function (Application $app): IngredientTranslator {
+            if ($app->environment('testing')) {
+                return new FakeIngredientTranslator;
+            }
+
+            return new GeminiIngredientTranslator(
+                $this->string('nutrition.gemini.base_url'),
+                $this->string('nutrition.gemini.model'),
+                $this->nullableString('nutrition.gemini.key'),
+                $app->make(Repository::class),
+                (int) config('nutrition.gemini.translate_timeout', 15),
+            );
         });
 
         // Bound once so the barcode lookup path (a controller) and the resolver
