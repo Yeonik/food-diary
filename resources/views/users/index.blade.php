@@ -30,6 +30,24 @@
                             <div class="s">{{ __('users.owner') }}@if ($isYou) · {{ __('users.you') }}@endif</div>
                         @endif
                     </div>
+
+                    {{-- Nothing to press beside your own row. An owner who
+                         suspended or deleted themselves would leave an instance
+                         nobody can administer, so the action is not offered and
+                         the controller refuses it as well. --}}
+                    @unless ($isYou)
+                        @if ($account->isSuspended())
+                            <form method="post" action="{{ route('users.restore', $account) }}">
+                                @csrf @method('DELETE')
+                                <x-button variant="secondary" type="submit">{{ __('users.restore') }}</x-button>
+                            </form>
+                        @else
+                            <form method="post" action="{{ route('users.suspend', $account) }}">
+                                @csrf
+                                <x-button variant="secondary" type="submit">{{ __('users.suspend') }}</x-button>
+                            </form>
+                        @endif
+                    @endunless
                 </div>
             </x-card>
         @endforeach

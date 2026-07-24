@@ -183,6 +183,29 @@ class SuspendedAccessTest extends TestCase
         $this->get('/')->assertOk()->assertDontSee(__('account.suspended_title'));
     }
 
+    public function test_an_established_session_is_walled_without_being_destroyed(): void
+    {
+        // The claim the whole design rests on, asserted through a real sign-in
+        // and a real session rather than through `actingAs`, which would inject
+        // whichever copy of the account this test happens to be holding.
+        $user = User::factory()->create(['password' => self::PASSWORD]);
+
+        $this->post('/login', ['email' => $user->email, 'password' => self::PASSWORD]);
+        $this->get('/')->assertOk();
+
+        // Suspended through a different instance entirely, the way another
+        // person's request would do it.
+        User::query()->whereKey($user->id)->update(['suspended_at' => now()]);
+
+        // Same session, same cookie, nothing signed out or invalidated.
+        $this->get('/')->assertForbidden()->assertSee(__('account.suspended_title'));
+        $this->assertAuthenticated();
+
+        User::query()->whereKey($user->id)->update(['suspended_at' => null]);
+
+        $this->get('/')->assertOk();
+    }
+
     public function test_suspension_takes_nothing_away(): void
     {
         $user = User::factory()->create();

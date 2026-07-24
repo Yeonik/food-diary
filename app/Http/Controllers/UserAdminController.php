@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -31,5 +33,54 @@ class UserAdminController extends Controller
             // was first, not because the list sorts them there.
             'accounts' => User::query()->orderBy('id')->get(),
         ]);
+    }
+
+    public function suspend(Request $request, User $account): RedirectResponse
+    {
+        if ($refusal = $this->refuseIfItIsThemselves($request, $account)) {
+            return $refusal;
+        }
+
+        // Already suspended is not an error and not a second suspension: the
+        // moment it began is the one thing this column is good for, and
+        // overwriting it with today would lose it.
+        if (! $account->isSuspended()) {
+            $account->forceFill(['suspended_at' => now()])->save();
+        }
+
+        return redirect()->route('users.index')
+            ->with('status', __('users.suspended_flash', ['name' => $account->name]));
+    }
+
+    public function restore(Request $request, User $account): RedirectResponse
+    {
+        if ($refusal = $this->refuseIfItIsThemselves($request, $account)) {
+            return $refusal;
+        }
+
+        $account->forceFill(['suspended_at' => null])->save();
+
+        return redirect()->route('users.index')
+            ->with('status', __('users.restored_flash', ['name' => $account->name]));
+    }
+
+    /**
+     * The owner may not do this to their own account.
+     *
+     * An owner who suspended themselves would leave an instance with nobody able
+     * to lift it — the same shape of dead end as an owner deleting themselves,
+     * which the account screen already refuses. It is written as "yourself"
+     * rather than "the owner" because that is the mistake being prevented; with
+     * one owner per instance the two conditions name the same account, and if
+     * that ever changes, one owner locking another out is a different question
+     * that should be decided rather than inherited from this line.
+     */
+    private function refuseIfItIsThemselves(Request $request, User $account): ?RedirectResponse
+    {
+        if (! $account->is($request->user())) {
+            return null;
+        }
+
+        return back()->withErrors(['account' => __('users.cannot_act_on_yourself')]);
     }
 }

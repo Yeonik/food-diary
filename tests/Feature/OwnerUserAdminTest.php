@@ -41,6 +41,8 @@ class OwnerUserAdminTest extends TestCase
     {
         return [
             'the list' => ['get', 'users.index'],
+            'suspending' => ['post', 'users.suspend'],
+            'lifting a suspension' => ['delete', 'users.restore'],
         ];
     }
 
@@ -48,12 +50,100 @@ class OwnerUserAdminTest extends TestCase
     public function test_somebody_who_is_not_the_owner_is_refused(string $method, string $route): void
     {
         $this->owner();
+        $target = User::factory()->create(['name' => 'A Bystander']);
 
         // An ordinary invited account: signed in, entirely legitimate, and with
         // no business here.
         $this->actingAs(User::factory()->create());
 
-        $this->{$method}(route($route))->assertForbidden();
+        $this->{$method}(route($route, $target))->assertForbidden();
+
+        // And the refusal came before anything happened — the status alone would
+        // pass while the write it was meant to prevent had already run.
+        $after = $target->fresh();
+        $this->assertNotNull($after);
+        $this->assertFalse($after->isSuspended(), 'A bystander was suspended.');
+        $this->assertSame('A Bystander', $after->name);
+    }
+
+    public function test_the_owner_suspends_somebody_and_can_lift_it_again(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+
+        $this->actingAs($owner)
+            ->post(route('users.suspend', $person))
+            ->assertRedirect(route('users.index'));
+
+        $this->assertTrue($person->fresh()?->isSuspended());
+
+        $this->actingAs($owner)
+            ->delete(route('users.restore', $person))
+            ->assertRedirect(route('users.index'));
+
+        $this->assertFalse($person->fresh()?->isSuspended());
+    }
+
+    public function test_suspending_twice_does_not_move_the_moment_it_began(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+
+        $this->actingAs($owner)->post(route('users.suspend', $person));
+        $began = $person->fresh()?->suspended_at;
+
+        $this->travel(2)->days();
+
+        $this->actingAs($owner)->post(route('users.suspend', $person));
+
+        // When it began is the one thing this column records; a second press
+        // must not overwrite it with today.
+        $this->assertEquals($began, $person->fresh()?->suspended_at);
+    }
+
+    public function test_the_owner_cannot_suspend_themselves(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->from(route('users.index'))
+            ->post(route('users.suspend', $owner))
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHasErrors('account');
+
+        // The instance would have nobody able to lift it.
+        $this->assertFalse($owner->fresh()?->isSuspended());
+    }
+
+    public function test_the_screen_offers_nothing_to_press_beside_your_own_row(): void
+    {
+        $owner = $this->owner();
+        $other = User::factory()->create();
+
+        $screen = $this->actingAs($owner)->get(route('users.index'))->assertOk();
+
+        $screen->assertSee(route('users.suspend', $other));
+        $screen->assertDontSee(route('users.suspend', $owner));
+    }
+
+    public function test_a_suspended_person_is_walled_from_the_moment_it_is_pressed(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+
+        // Signed in and working before the owner acts.
+        $this->actingAs($person)->get('/')->assertOk();
+
+        $this->actingAs($owner)->post(route('users.suspend', $person));
+
+        // Their very next request. Nothing was destroyed — the column is read
+        // again, from the table.
+        //
+        // Deliberately NOT refreshed: `$person` is a copy taken before the owner
+        // pressed anything, and `actingAs` hands that stale copy to the guard.
+        // The wall has to be right anyway, because it does not ask the account
+        // object.
+        $this->actingAs($person)->get('/')->assertForbidden();
     }
 
     public function test_a_guest_is_sent_to_sign_in_rather_than_refused(): void

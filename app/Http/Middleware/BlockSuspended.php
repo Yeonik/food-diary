@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -25,11 +27,20 @@ use Symfony\Component\HttpFoundation\Response;
  * this application next year is closed to a suspended account because of that
  * default, not because whoever added it remembered this file.
  *
- * The column is read on every request rather than copied into the session, so
- * suspending somebody who is signed in takes effect on their next request, and
- * lifting it lets them straight back in without signing in again. There is no
- * stored copy of the state to go stale, which is also why suspension does not
- * destroy the session: the wall is the answer, and it is asked fresh every time.
+ * **The column is read from the database, not from the account object the guard
+ * hands over.** That object can be a copy resolved earlier and held in memory,
+ * and a wall that consults a stale copy is not a wall — it was observed letting
+ * an established session straight through. Whether it goes stale depends on how
+ * long a process lives, which is a property of the server this happens to run
+ * under and not a promise anybody made. So the state is fetched by primary key
+ * on each request: one lookup, against a boundary that is not allowed to be
+ * wrong. Doubt means no access.
+ *
+ * Reading it fresh every time is also what makes suspension immediate in both
+ * directions — it takes effect on the suspended person's next request, and
+ * lifting it lets them back in without signing in again. There is no copy of the
+ * state anywhere to go stale, which is why suspension does not destroy the
+ * session either: the wall is the answer, and it is asked again every time.
  */
 class BlockSuspended
 {
@@ -52,7 +63,17 @@ class BlockSuspended
 
         // Nobody signed in: not this middleware's business. The `auth`
         // middleware decides what happens to a guest.
-        if ($user === null || ! $user->isSuspended()) {
+        if ($user === null) {
+            return $next($request);
+        }
+
+        // Straight from the table, by primary key — see the note above on why
+        // the account object is not trusted for this one question.
+        $suspendedAt = DB::table('users')
+            ->where('id', $user->getAuthIdentifier())
+            ->value('suspended_at');
+
+        if ($suspendedAt === null) {
             return $next($request);
         }
 
@@ -64,7 +85,9 @@ class BlockSuspended
         // is no URL to arrive at and be bounced from, so no loop to get wrong,
         // and the address bar still shows what was asked for.
         return response()->view('suspended', [
-            'since' => $user->suspended_at,
+            // The value just read, not the one on the account object, for the
+            // same reason the decision above used it.
+            'since' => is_string($suspendedAt) ? CarbonImmutable::parse($suspendedAt) : $suspendedAt,
         ], Response::HTTP_FORBIDDEN);
     }
 }

@@ -96,6 +96,8 @@ Route::middleware('auth')->group(function (): void {
     // the group, so a route added here later is behind it by where it lives.
     Route::middleware('can:'.AppServiceProvider::ADMINISTER_ACCOUNTS)->group(function (): void {
         Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
+        Route::post('/users/{account}/suspension', [UserAdminController::class, 'suspend'])->name('users.suspend');
+        Route::delete('/users/{account}/suspension', [UserAdminController::class, 'restore'])->name('users.restore');
     });
 
 });
