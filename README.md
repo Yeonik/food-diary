@@ -124,6 +124,27 @@ Recipes may reference other recipes; cycles are rejected rather than followed,
 and an ingredient recipe that is itself missing a cooked weight makes the whole
 thing incomplete until it is supplied.
 
+**Finding an ingredient.** A recipe can only be built from library items, and the
+library starts nearly empty — so an ingredient can be searched by name across the
+library, USDA and Open Food Facts, the same resolution the manual log path uses.
+It is a round trip through the session, not a background search: there is no XHR
+anywhere in this application. The recipe being assembled is held in the session
+while the person searches, picks a result labelled with its source, and it is
+promoted into the library and added to the recipe. A recipe ingredient must be a
+real library row — a composite key ties it to its owner — so the chosen result
+becomes one; a match already in the library is reused, not duplicated. The
+numbers come from the source's record, never the form, and an estimate is refused
+as an ingredient: it has no honest number.
+
+A foreign ingredient name is translated to English for the USDA lookup, because
+USDA indexes English and is the source that actually covers raw ingredients,
+where Open Food Facts (packaged products) barely does. The translation fires only
+on a non-Latin term, is cached by term, and fails open — a failed or slow
+translation just searches USDA with the original term. It is not counted against
+the daily recognition limit: a text translation is not a photo recognition, and a
+refusal that named that limit would name the wrong cause. It only ever changes
+which candidates are found, never their numbers.
+
 A logged entry stores a **snapshot** of the numbers as they were at the moment of
 logging. Correcting a library item, editing a recipe, or supplying a recipe's
 cooked weight later changes future entries only — last month's totals never
@@ -447,10 +468,12 @@ app/Nutrition/
   FoodResolver.php                    walks the ladder, USDA + OFF in parallel
   RecipeCalculator.php                composes a profile from ingredients,
                                       divided by the cooked weight
+  IngredientTranslator (+ Gemini/Fake) foreign name -> English, for USDA
   RecognitionQuota.php                a day's allowance, per account
   PhotoPreparer.php                   EXIF strip, resize, content validation
 app/Models/Concerns/BelongsToUser.php the owner scope, on every domain model
 app/Http/Middleware/BlockSuspended.php  the wall, closed by default
+app/Support/RecipeDraft.php           a recipe assembled across a round trip
 app/Support/OwnerAccount.php          the owner, from configuration
 app/Support/AccountErasure.php        leaving, in the order the keys allow
 app/Models/  User, Invite, Recognition, FoodItem, RecipeIngredient, MealEntry,
