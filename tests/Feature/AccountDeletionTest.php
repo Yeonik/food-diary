@@ -138,6 +138,28 @@ class AccountDeletionTest extends TestCase
         return $cases;
     }
 
+    public function test_leaving_keeps_no_session_behind(): void
+    {
+        $user = $this->somebodyWithAFullDiary();
+
+        // `sessions.user_id` has no foreign key, so nothing removes these on its
+        // own. Signing out clears the session in hand; a row left in the table
+        // still names an account that no longer exists.
+        DB::table('sessions')->insert([
+            'id' => 'another-device-of-theirs',
+            'user_id' => $user->id,
+            'ip_address' => null,
+            'user_agent' => null,
+            'payload' => '',
+            'last_activity' => time(),
+        ]);
+
+        $this->delete(route('account.destroy'), ['current_password' => self::PASSWORD])
+            ->assertRedirect(route('login'));
+
+        $this->assertSame(0, DB::table('sessions')->where('user_id', $user->id)->count());
+    }
+
     public function test_the_invitation_they_joined_with_stops_naming_them(): void
     {
         // The invitation itself stays: it is the owner's record that somebody

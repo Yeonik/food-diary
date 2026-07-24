@@ -65,7 +65,37 @@ final class AccountErasure
                 DB::table($table)->where('user_id', $user->id)->delete();
             }
 
+            // Sessions are not the person's data and are not in the list above,
+            // but they are rows that name them. `sessions.user_id` carries no
+            // foreign key — it is a plain indexed column — so nothing removes
+            // these on its own, and a signed-in session outliving the account it
+            // belonged to is a loose end whichever path got here. Somebody
+            // leaving of their own accord has their current session invalidated
+            // by the controller as well; this covers the others, and covers the
+            // owner removing an account whose session they cannot reach.
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+
             DB::table('users')->where('id', $user->id)->delete();
         });
+    }
+
+    /**
+     * What erasing this account would remove, table by table.
+     *
+     * Read from the same list that does the removing, so a screen that warns
+     * somebody cannot quietly fall out of step with what actually happens — add
+     * a table to the erasure and it appears in the warning by itself.
+     *
+     * @return array<string, int>
+     */
+    public function tally(User $user): array
+    {
+        $counts = [];
+
+        foreach (self::IN_ORDER as $table) {
+            $counts[$table] = DB::table($table)->where('user_id', $user->id)->count();
+        }
+
+        return $counts;
     }
 }

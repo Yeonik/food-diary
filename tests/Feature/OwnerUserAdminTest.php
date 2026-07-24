@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\FoodItem;
 use App\Models\MealEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -43,6 +45,8 @@ class OwnerUserAdminTest extends TestCase
             'the list' => ['get', 'users.index'],
             'suspending' => ['post', 'users.suspend'],
             'lifting a suspension' => ['delete', 'users.restore'],
+            'the deletion screen' => ['get', 'users.delete'],
+            'deleting' => ['delete', 'users.destroy'],
         ];
     }
 
@@ -144,6 +148,133 @@ class OwnerUserAdminTest extends TestCase
         // The wall has to be right anyway, because it does not ask the account
         // object.
         $this->actingAs($person)->get('/')->assertForbidden();
+    }
+
+    public function test_the_deletion_screen_names_the_account_and_counts_what_would_go(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create(['name' => 'Someone Leaving']);
+
+        MealEntry::factory()->count(3)->for($person)->create();
+        FoodItem::factory()->count(2)->for($person)->create();
+
+        // The counts come from the same list that does the deleting, so the
+        // warning cannot drift from what actually happens.
+        $this->actingAs($owner)->get(route('users.delete', $person))
+            ->assertOk()
+            ->assertSee('Someone Leaving')
+            ->assertSee($person->email)
+            ->assertSee(__('users.holds.meal_entries', ['count' => 3]))
+            ->assertSee(__('users.holds.food_items', ['count' => 2]));
+    }
+
+    public function test_the_wrong_address_deletes_nothing(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+        MealEntry::factory()->for($person)->create();
+
+        $this->actingAs($owner)
+            ->from(route('users.delete', $person))
+            ->delete(route('users.destroy', $person), ['email' => 'someone.else@example.test'])
+            ->assertRedirect(route('users.delete', $person))
+            ->assertSessionHasErrors('email');
+
+        // Typing an address that belongs to a different row must not delete the
+        // row that was on screen.
+        $this->assertNotNull($person->fresh());
+        $this->assertSame(1, MealEntry::ownedBy($person)->count());
+    }
+
+    public function test_typing_the_address_deletes_the_account_and_everything_in_it(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+        MealEntry::factory()->count(2)->for($person)->create();
+        FoodItem::factory()->for($person)->create();
+
+        $this->actingAs($owner)
+            ->delete(route('users.destroy', $person), ['email' => $person->email])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertNull($person->fresh());
+
+        foreach (['meal_entries', 'food_items', 'weight_entries', 'goals', 'recognitions'] as $table) {
+            $this->assertSame(
+                0,
+                DB::table($table)->where('user_id', $person->id)->count(),
+                "Rows were left in {$table}."
+            );
+        }
+    }
+
+    public function test_the_address_is_matched_however_it_was_typed(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create(['email' => 'mixed.case@example.test']);
+
+        $this->actingAs($owner)
+            ->delete(route('users.destroy', $person), ['email' => '  Mixed.Case@Example.TEST '])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertNull($person->fresh());
+    }
+
+    public function test_deleting_one_account_does_not_touch_another(): void
+    {
+        $owner = $this->owner();
+        $going = User::factory()->create();
+        $staying = User::factory()->create();
+
+        MealEntry::factory()->for($going)->create();
+        MealEntry::factory()->for($staying)->create(['name' => 'still here']);
+
+        $this->actingAs($owner)->delete(route('users.destroy', $going), ['email' => $going->email]);
+
+        $this->assertNotNull($staying->fresh());
+        $this->assertSame(1, MealEntry::ownedBy($staying)->count());
+        $this->assertNotNull($owner->fresh());
+    }
+
+    public function test_the_deleted_account_keeps_no_session_behind_it(): void
+    {
+        $owner = $this->owner();
+        $person = User::factory()->create();
+
+        // `sessions.user_id` carries no foreign key, so nothing removes these on
+        // its own — a row naming an account that no longer exists.
+        DB::table('sessions')->insert([
+            'id' => 'a-session-of-theirs',
+            'user_id' => $person->id,
+            'ip_address' => null,
+            'user_agent' => null,
+            'payload' => '',
+            'last_activity' => time(),
+        ]);
+
+        $this->actingAs($owner)->delete(route('users.destroy', $person), ['email' => $person->email]);
+
+        $this->assertSame(0, DB::table('sessions')->where('user_id', $person->id)->count());
+    }
+
+    public function test_the_owner_cannot_delete_themselves(): void
+    {
+        $owner = $this->owner();
+
+        $this->actingAs($owner)
+            ->from(route('users.index'))
+            ->get(route('users.delete', $owner))
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHasErrors('account');
+
+        $this->actingAs($owner)
+            ->from(route('users.index'))
+            ->delete(route('users.destroy', $owner), ['email' => $owner->email])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHasErrors('account');
+
+        // Even having typed their own address correctly.
+        $this->assertNotNull($owner->fresh());
     }
 
     public function test_a_guest_is_sent_to_sign_in_rather_than_refused(): void

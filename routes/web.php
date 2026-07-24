@@ -98,6 +98,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
         Route::post('/users/{account}/suspension', [UserAdminController::class, 'suspend'])->name('users.suspend');
         Route::delete('/users/{account}/suspension', [UserAdminController::class, 'restore'])->name('users.restore');
+        Route::get('/users/{account}/deletion', [UserAdminController::class, 'confirmDelete'])->name('users.delete');
+        Route::delete('/users/{account}', [UserAdminController::class, 'destroy'])->name('users.destroy');
     });
 
 });

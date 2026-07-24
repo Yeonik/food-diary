@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\AccountErasure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -62,6 +63,50 @@ class UserAdminController extends Controller
 
         return redirect()->route('users.index')
             ->with('status', __('users.restored_flash', ['name' => $account->name]));
+    }
+
+    /**
+     * The screen that stands between the button and the deletion.
+     *
+     * It exists because the action is irreversible and aimed at somebody else:
+     * one press on a list of similar-looking rows is the wrong amount of
+     * deliberation for destroying another person's diary. So the account is
+     * named, what would go is counted, and the address has to be typed.
+     */
+    public function confirmDelete(Request $request, User $account, AccountErasure $erasure): View|RedirectResponse
+    {
+        if ($refusal = $this->refuseIfItIsThemselves($request, $account)) {
+            return $refusal;
+        }
+
+        return view('users.delete', [
+            'account' => $account,
+            // Counted from the same list that does the deleting.
+            'tally' => array_filter($erasure->tally($account)),
+        ]);
+    }
+
+    public function destroy(Request $request, User $account, AccountErasure $erasure): RedirectResponse
+    {
+        if ($refusal = $this->refuseIfItIsThemselves($request, $account)) {
+            return $refusal;
+        }
+
+        // Not the owner's password: that would only prove the owner is present,
+        // which the session already says. Typing the address proves they mean
+        // this account rather than the row above it.
+        $typed = mb_strtolower(trim((string) $request->input('email', '')));
+
+        if (! hash_equals(mb_strtolower($account->email), $typed)) {
+            return back()->withErrors(['email' => __('users.delete_email_mismatch')]);
+        }
+
+        $name = $account->name;
+
+        $erasure->erase($account);
+
+        return redirect()->route('users.index')
+            ->with('status', __('users.deleted_flash', ['name' => $name]));
     }
 
     /**

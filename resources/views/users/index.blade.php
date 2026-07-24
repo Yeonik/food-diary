@@ -36,17 +36,23 @@
                          nobody can administer, so the action is not offered and
                          the controller refuses it as well. --}}
                     @unless ($isYou)
-                        @if ($account->isSuspended())
-                            <form method="post" action="{{ route('users.restore', $account) }}">
-                                @csrf @method('DELETE')
-                                <x-button variant="secondary" type="submit">{{ __('users.restore') }}</x-button>
-                            </form>
-                        @else
-                            <form method="post" action="{{ route('users.suspend', $account) }}">
-                                @csrf
-                                <x-button variant="secondary" type="submit">{{ __('users.suspend') }}</x-button>
-                            </form>
-                        @endif
+                        <div style="display:flex; gap:8px; align-items:center">
+                            @if ($account->isSuspended())
+                                <form method="post" action="{{ route('users.restore', $account) }}">
+                                    @csrf @method('DELETE')
+                                    <x-button variant="secondary" type="submit">{{ __('users.restore') }}</x-button>
+                                </form>
+                            @else
+                                <form method="post" action="{{ route('users.suspend', $account) }}">
+                                    @csrf
+                                    <x-button variant="secondary" type="submit">{{ __('users.suspend') }}</x-button>
+                                </form>
+                            @endif
+
+                            {{-- A link to the confirmation screen, not a delete
+                                 button. Nothing is destroyed from a list. --}}
+                            <x-button variant="secondary" :href="route('users.delete', $account)">{{ __('users.delete') }}</x-button>
+                        </div>
                     @endunless
                 </div>
             </x-card>
