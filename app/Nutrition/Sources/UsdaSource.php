@@ -22,6 +22,17 @@ use Illuminate\Support\Facades\Http;
  */
 class UsdaSource implements RemoteNutritionSource
 {
+    /**
+     * Search only whole, raw and basic foods. Foundation and SR Legacy are the
+     * ingredients a recipe is built from — "Potatoes, raw", "Potatoes, boiled" —
+     * with their own per-100 g figures. Without this parameter the search also
+     * returns FNDDS survey foods, the mixed dishes a diet study codes ("...
+     * patty", "... soup", "..., NFS"), and those crowd the raw ingredient off the
+     * top. Branded is left out on purpose: packaged products are Open Food Facts'
+     * work, and here they would be redundant noise beneath the ingredient.
+     */
+    private const RAW_FOOD_DATA_TYPES = 'Foundation,SR Legacy';
+
     public function __construct(
         private readonly string $baseUrl,
         private readonly ?string $apiKey,
@@ -54,6 +65,7 @@ class UsdaSource implements RemoteNutritionSource
             url: rtrim($this->baseUrl, '/').'/foods/search',
             query: [
                 'query' => $name,
+                'dataType' => self::RAW_FOOD_DATA_TYPES,
                 'pageSize' => 5,
             ],
             headers: $this->apiKey !== null && $this->apiKey !== ''

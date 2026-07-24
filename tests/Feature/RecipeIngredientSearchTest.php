@@ -12,6 +12,7 @@ use App\Nutrition\ProfileOrigin;
 use App\Nutrition\SearchTerms;
 use App\Support\RecipeDraft;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -57,6 +58,51 @@ class RecipeIngredientSearchTest extends TestCase
             ->assertRedirect(route('library.recipe.ingredient.choose'));
     }
 
+    /** @return array<string, mixed> */
+    private function usdaFood(string $description, float $kcal, float $protein, float $fat, float $carbs, int $fdcId): array
+    {
+        return [
+            'description' => $description,
+            'fdcId' => $fdcId,
+            'foodNutrients' => [
+                ['nutrientNumber' => '208', 'value' => $kcal],
+                ['nutrientNumber' => '203', 'value' => $protein],
+                ['nutrientNumber' => '204', 'value' => $fat],
+                ['nutrientNumber' => '205', 'value' => $carbs],
+            ],
+        ];
+    }
+
+    /**
+     * A fake FoodData Central that behaves the way the live one does: filtered to
+     * raw types (Foundation / SR Legacy) it returns the raw ingredient; with no
+     * dataType it returns FNDDS survey dishes on top, above the raw food. So the
+     * candidates depend on the dataType the search actually sends.
+     */
+    private function fakeUsdaByDataType(): void
+    {
+        Http::fake([
+            'api.nal.usda.gov/*' => function (Request $request) {
+                $dataType = $request->data()['dataType'] ?? '';
+                $dataType = is_string($dataType) ? $dataType : '';
+
+                $foods = str_contains($dataType, 'Foundation')
+                    ? [
+                        $this->usdaFood('Potatoes, boiled, without salt', 87, 1.9, 0.1, 20, 170026),
+                        $this->usdaFood('Potatoes, raw', 77, 2.0, 0.1, 17, 170093),
+                    ]
+                    : [
+                        $this->usdaFood('Potato patty', 210, 4.0, 12, 22, 1102570),
+                        $this->usdaFood('Potato soup, NFS', 70, 2.0, 3.0, 9, 1102600),
+                        $this->usdaFood('Potatoes, raw', 77, 2.0, 0.1, 17, 170093),
+                    ];
+
+                return Http::response(['foods' => $foods]);
+            },
+            'world.openfoodfacts.org/*' => Http::response(['products' => []]),
+        ]);
+    }
+
     public function test_a_usda_ingredient_can_be_searched_chosen_and_added(): void
     {
         $this->fakeUsdaReturns('Rice, white, long-grain, cooked', 130, 2.7, 0.3, 28);
@@ -83,6 +129,29 @@ class RecipeIngredientSearchTest extends TestCase
         $draft = RecipeDraft::fromSession(session(RecipeDraft::SESSION_KEY));
         $this->assertNotNull($draft);
         $this->assertSame([['item_id' => $item->id, 'grams' => 200.0]], $draft->ingredients);
+    }
+
+    public function test_the_usda_search_returns_raw_foods_not_survey_dishes(): void
+    {
+        // The point of the dataType filter: an ingredient search wants the raw
+        // food a recipe is built from, not the mixed dishes FNDDS codes.
+        $this->fakeUsdaByDataType();
+
+        $this->search('potato');
+
+        $this->get(route('library.recipe.ingredient.choose'))
+            ->assertOk()
+            // The raw ingredient is offered...
+            ->assertSee('Potatoes, boiled, without salt')
+            // ...and the survey dishes are not among the candidates at all, so
+            // they cannot sit on top of the one the person wants.
+            ->assertDontSee('Potato patty')
+            ->assertDontSee('Potato soup, NFS');
+
+        // USDA was asked for raw types only.
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'nal.usda.gov')
+            && str_contains((string) ($request->data()['dataType'] ?? ''), 'Foundation')
+            && str_contains((string) ($request->data()['dataType'] ?? ''), 'SR Legacy'));
     }
 
     public function test_the_numbers_come_from_the_source_not_the_form(): void
