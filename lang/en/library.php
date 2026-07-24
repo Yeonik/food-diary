@@ -45,6 +45,19 @@ return [
     'add_ingredient' => 'Add ingredient',
     'save_recipe' => 'Save recipe',
 
+    // Finding an ingredient in the databases when the library does not have it.
+    'ingredient_search' => 'Find an ingredient',
+    'ingredient_search_placeholder' => 'Search USDA and Open Food Facts…',
+    'ingredient_find' => 'Find',
+    'ingredient_choose_title' => 'Choose an ingredient',
+    'ingredient_choose_intro' => 'Results for ":query" — from your library, USDA and Open Food Facts. Pick one and give its weight in the dish.',
+    'ingredient_none' => 'Nothing was found for ":query". Try another name, or add the product to your library by hand.',
+    'ingredient_grams' => 'Weight in the recipe, g',
+    'ingredient_grams_hint' => 'How much of this ingredient the recipe uses.',
+    'ingredient_add_to_recipe' => 'Add to recipe',
+    'ingredient_added' => 'Added :name to the recipe.',
+    'ingredient_estimate_refused' => 'That candidate is only an estimate, so it cannot be a recipe ingredient.',
+
     // The cooked weight — the divisor, and the reason the recipe's numbers are
     // honest. The hint names what to weigh (the finished dish) and, when there
     // are ingredients, shows their raw total for comparison only.

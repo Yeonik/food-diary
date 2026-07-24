@@ -14,6 +14,7 @@ use App\Http\Controllers\ManualEntryController;
 use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\MealPhotoController;
 use App\Http\Controllers\PendingLogController;
+use App\Http\Controllers\RecipeIngredientController;
 use App\Http\Controllers\UserAdminController;
 use App\Http\Controllers\WeightController;
 use App\Providers\AppServiceProvider;
@@ -61,6 +62,18 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/library', [FoodItemController::class, 'store'])->name('library.store');
     Route::get('/library/recipes/create', [FoodItemController::class, 'createRecipe'])->name('library.recipe.create');
     Route::post('/library/recipes', [FoodItemController::class, 'storeRecipe'])->name('library.recipe.store');
+
+    // Building a recipe from database ingredients — a round trip through the
+    // session, not a live search, because there is no XHR in this application.
+    // The recipe being assembled is held in the session between these steps.
+    // The "find ingredient" button lives inside the recipe form and submits it,
+    // so it arrives with whatever verb that form uses — POST for a new recipe,
+    // a spoofed PATCH for an edit. Both mean the same thing here: capture the
+    // form and search. The verb carries no meaning at this endpoint.
+    Route::match(['post', 'patch'], '/library/recipes/ingredients/search', [RecipeIngredientController::class, 'search'])->name('library.recipe.ingredient.search');
+    Route::get('/library/recipes/ingredients/choose', [RecipeIngredientController::class, 'choose'])->name('library.recipe.ingredient.choose');
+    Route::post('/library/recipes/ingredients/add', [RecipeIngredientController::class, 'add'])->name('library.recipe.ingredient.add');
+    Route::post('/library/recipes/ingredients/cancel', [RecipeIngredientController::class, 'cancel'])->name('library.recipe.ingredient.cancel');
     Route::get('/library/recipes/{item}/edit', [FoodItemController::class, 'editRecipe'])->name('library.recipe.edit');
     Route::patch('/library/recipes/{item}', [FoodItemController::class, 'updateRecipe'])->name('library.recipe.update');
     Route::get('/library/{item}/edit', [FoodItemController::class, 'edit'])->name('library.edit');

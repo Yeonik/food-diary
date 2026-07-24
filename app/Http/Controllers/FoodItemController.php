@@ -12,6 +12,7 @@ use App\Nutrition\Exceptions\RecipeIncompleteException;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\ProfileOrigin;
 use App\Nutrition\RecipeCalculator;
+use App\Support\RecipeDraft;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -104,8 +105,16 @@ class FoodItemController extends Controller
         return redirect()->route('library.index')->with('status', __('library.item_corrected'));
     }
 
-    public function createRecipe(): View
+    public function createRecipe(Request $request): View
     {
+        // A recipe being assembled through the ingredient search survives in the
+        // session; hydrate the form from it so the rows added there are here.
+        // Only a draft for a new recipe (no id) belongs on this screen.
+        $draft = RecipeDraft::fromSession($request->session()->get(RecipeDraft::SESSION_KEY));
+        if ($draft !== null && ! $draft->belongsTo(null)) {
+            $draft = null;
+        }
+
         return view('library.recipe', [
             'recipe' => null,
             'ingredients' => FoodItem::query()->orderBy('name')->get(),
@@ -113,6 +122,7 @@ class FoodItemController extends Controller
             'incomplete' => false,
             // No ingredients yet, so no raw sum to compare against.
             'rawSum' => null,
+            'draft' => $draft,
         ]);
     }
 
@@ -145,12 +155,23 @@ class FoodItemController extends Controller
             return back()->withErrors(['ingredients' => __('library.ingredient_needs_cooked_weight')])->withInput();
         }
 
+        // Saved: the draft it was assembled from has done its job.
+        $request->session()->forget(RecipeDraft::SESSION_KEY);
+
         return redirect()->route('library.index')->with('status', __('library.recipe_saved', ['name' => $recipe->name]));
     }
 
-    public function editRecipe(FoodItem $item, RecipeCalculator $calculator): View
+    public function editRecipe(Request $request, FoodItem $item, RecipeCalculator $calculator): View
     {
         abort_unless($item->isRecipe(), 404);
+
+        // A draft assembled through the ingredient search for THIS recipe takes
+        // precedence over the saved rows, so an ingredient just added there is
+        // shown. A draft for a different recipe is ignored.
+        $draft = RecipeDraft::fromSession($request->session()->get(RecipeDraft::SESSION_KEY));
+        if ($draft !== null && ! $draft->belongsTo($item->id)) {
+            $draft = null;
+        }
 
         // What the ingredients currently come to, per 100 g. A saved recipe
         // cannot hold a cycle — saving one is refused — but the guard stays,
@@ -182,6 +203,7 @@ class FoodItemController extends Controller
             // weight obvious. Summed from the saved ingredients, so it is there
             // with JavaScript off.
             'rawSum' => $item->ingredients->sum('grams'),
+            'draft' => $draft,
         ]);
     }
 
@@ -207,6 +229,9 @@ class FoodItemController extends Controller
         } catch (RecipeIncompleteException) {
             return back()->withErrors(['ingredients' => __('library.ingredient_needs_cooked_weight')])->withInput();
         }
+
+        // Saved: the draft it may have been assembled from is spent.
+        $request->session()->forget(RecipeDraft::SESSION_KEY);
 
         return redirect()->route('library.index')->with('status', __('library.recipe_updated'));
     }

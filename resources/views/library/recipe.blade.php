@@ -5,9 +5,19 @@
 @section('content')
     @php
         $action = $recipe ? route('library.recipe.update', $recipe) : route('library.recipe.store');
-        $existing = old('ingredients', $recipe
+
+        // Rows to draw: a validation redisplay wins; then a draft assembled
+        // through the ingredient search (its rows, including one just added);
+        // then the saved recipe; then a single empty row for a new one.
+        $draftRows = ($draft ?? null)?->formRows();
+        $existing = old('ingredients', $draftRows ?? ($recipe
             ? $recipe->ingredients->map(fn ($line) => ['item_id' => $line->ingredient_id, 'grams' => $line->grams])->all()
-            : [['item_id' => '', 'grams' => '']]);
+            : [['item_id' => '', 'grams' => '']]));
+
+        // Name and cooked weight likewise prefer the draft, so searching for an
+        // ingredient does not lose what was typed.
+        $nameValue = old('name', ($draft ?? null)?->name ?: $recipe?->name);
+        $cookedValue = old('cooked_weight_g', ($draft ?? null)?->cookedWeight ?: $recipe?->cooked_weight_g);
     @endphp
 
     <div class="narrow600 vform">
@@ -17,7 +27,10 @@
             @csrf
             @if ($recipe) @method('PATCH') @endif
 
-            <x-field name="name" :label="__('library.recipe_name')" :value="old('name', $recipe?->name)" required />
+            {{-- Carried to the ingredient search so it survives the round trip. --}}
+            @if ($recipe)<input type="hidden" name="recipe_id" value="{{ $recipe->id }}">@endif
+
+            <x-field name="name" :label="__('library.recipe_name')" :value="$nameValue" required />
 
             <div>
                 <div class="flabel">{{ __('library.ingredients') }}</div>
@@ -47,6 +60,28 @@
                 <button type="button" class="add-dashed" onclick="addIngredientRow()">
                     <span aria-hidden="true">+</span>{{ __('library.add_ingredient') }}
                 </button>
+
+                {{-- Find an ingredient in the databases when it is not in the
+                     library yet — the reason recipes were hard to build with an
+                     empty library. This submits the whole recipe form to the
+                     search (formaction), so the name, the cooked weight and the
+                     rows so far are captured before leaving; the search hands
+                     back candidates to choose from, and the chosen one is
+                     promoted into the library and added here. A round trip, not
+                     a background fetch. --}}
+                <div class="ing-search">
+                    <input type="search" class="field" name="query" style="flex:1;min-width:0"
+                           placeholder="{{ __('library.ingredient_search_placeholder') }}"
+                           aria-label="{{ __('library.ingredient_search') }}">
+                    {{-- formnovalidate: searching for an ingredient must not
+                         require the cooked weight or name to be filled first —
+                         the person may well be searching before they know the
+                         cooked weight. The search validates only its own query. --}}
+                    <button type="submit" class="btn btn-s" formnovalidate
+                            formaction="{{ route('library.recipe.ingredient.search') }}">
+                        <x-icon name="search" width="14" height="14" /> {{ __('library.ingredient_find') }}
+                    </button>
+                </div>
             </div>
 
             {{-- The weight of the cooked dish, and the reason the numbers above
@@ -58,7 +93,7 @@
                  rejected. --}}
             <x-field type="text" name="cooked_weight_g" inputmode="decimal"
                      :label="__('library.cooked_weight')"
-                     :value="old('cooked_weight_g', $recipe?->cooked_weight_g)"
+                     :value="$cookedValue"
                      :hint="isset($rawSum) && $rawSum > 0
                         ? __('library.cooked_weight_hint_raw', ['grams' => \App\Support\Format::grams($rawSum)])
                         : __('library.cooked_weight_hint')"

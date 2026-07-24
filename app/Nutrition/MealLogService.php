@@ -199,6 +199,54 @@ class MealLogService
         ];
     }
 
+    /**
+     * Bring a chosen search candidate into the library and return its id,
+     * without logging anything — the recipe builder's need, as against the
+     * confirm screen's, which promotes as a side effect of logging an entry.
+     *
+     * A tier-1 candidate is already a library item: its id is returned as is,
+     * and the phrasing that found it is recorded as an alias, exactly as
+     * {@see commit()} does. A USDA or Open Food Facts candidate is promoted with
+     * its numbers and stable id. An estimate has no honest number and is refused
+     * — a recipe ingredient must be a real figure, never the model's guess.
+     *
+     * The numbers come from the candidate the resolver built server-side and
+     * carried through the session, never from the form: the caller passes the
+     * candidate array straight from the pending payload.
+     *
+     * @param  array<string, mixed>  $candidate  one entry from a resolver payload
+     *
+     * @throws \InvalidArgumentException when the candidate is an estimate
+     */
+    public function promoteCandidate(array $candidate, SearchTerms $terms): int
+    {
+        $source = NutrientSource::from((string) $candidate['source']);
+
+        if ($source === NutrientSource::Estimated) {
+            throw new \InvalidArgumentException('An estimate cannot become a recipe ingredient.');
+        }
+
+        // Already in the library: return the id and remember the phrasing.
+        $claimedItemId = is_int($candidate['food_item_id'] ?? null) ? $candidate['food_item_id'] : null;
+        if ($claimedItemId !== null && FoodItem::query()->whereKey($claimedItemId)->exists()) {
+            $this->recordAliases($claimedItemId, $terms);
+
+            return $claimedItemId;
+        }
+
+        $profile = new NutrientProfile(
+            kcal: (float) $candidate['kcal'],
+            proteinG: (float) $candidate['protein'],
+            fatG: (float) $candidate['fat'],
+            carbsG: (float) $candidate['carbs'],
+            source: $source,
+        );
+
+        $externalId = is_string($candidate['external_id'] ?? null) ? $candidate['external_id'] : null;
+
+        return $this->promoteToLibrary($terms->display(), $terms->alt(), $externalId, $profile, $source);
+    }
+
     private function promoteToLibrary(string $name, ?string $altName, ?string $externalId, NutrientProfile $profile, NutrientSource $source): int
     {
         $origin = match ($source) {
