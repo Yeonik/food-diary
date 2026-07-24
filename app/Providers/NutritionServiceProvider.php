@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Nutrition\Contracts\FoodRecogniser;
 use App\Nutrition\Contracts\IngredientTranslator;
+use App\Nutrition\DictionaryIngredientTranslator;
 use App\Nutrition\FakeIngredientTranslator;
 use App\Nutrition\FoodResolver;
 use App\Nutrition\GeminiIngredientTranslator;
@@ -56,18 +57,24 @@ class NutritionServiceProvider extends ServiceProvider
         // suite, translates nothing unless a test seeds it — so CI makes no call
         // and needs no key, the same seam the recogniser has. It is a singleton
         // so a test can seed the one instance the controller will resolve.
+        //
+        // In production a curated dictionary answers the common ingredients
+        // instantly and without the network — unaffected by the free tier's
+        // 429/503 — and only the long tail falls through to Gemini.
         $this->app->singleton(IngredientTranslator::class, function (Application $app): IngredientTranslator {
             if ($app->environment('testing')) {
                 return new FakeIngredientTranslator;
             }
 
-            return new GeminiIngredientTranslator(
+            $gemini = new GeminiIngredientTranslator(
                 $this->string('nutrition.gemini.base_url'),
                 $this->string('nutrition.gemini.model'),
                 $this->nullableString('nutrition.gemini.key'),
                 $app->make(Repository::class),
                 (int) config('nutrition.gemini.translate_timeout', 15),
             );
+
+            return new DictionaryIngredientTranslator($app->make(NameMatcher::class), $gemini);
         });
 
         // Bound once so the barcode lookup path (a controller) and the resolver
