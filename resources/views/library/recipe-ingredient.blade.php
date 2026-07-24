@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="narrow600">
-        <p class="caption">{{ __('library.ingredient_choose_intro', ['query' => $query]) }}</p>
+        <p class="conf-lead">{{ __('library.ingredient_choose_intro', ['query' => $query]) }}</p>
 
         @if (empty($candidates))
             {{-- Nothing answered. Not an estimate offered in its place — an
@@ -30,6 +30,11 @@
             <form method="post" action="{{ route('library.recipe.ingredient.add') }}" class="vform">
                 @csrf
 
+                <div class="cand-headrow">
+                    <span>{{ __('confirm.match_source') }}</span>
+                    <span>{{ __('nutrition.per_100g') }}</span>
+                </div>
+
                 <div class="cand-list" style="margin:14px 0">
                     @foreach ($candidates as $c => $candidate)
                         <label class="crow">
@@ -52,7 +57,6 @@
                                 {{ \App\Support\Format::macro($candidate['protein']) }} /
                                 {{ \App\Support\Format::macro($candidate['fat']) }} /
                                 {{ \App\Support\Format::macro($candidate['carbs']) }}
-                                <span class="rec-g">{{ __('nutrition.per_100g') }}</span>
                             </span>
                         </label>
                     @endforeach
