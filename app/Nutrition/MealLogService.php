@@ -24,6 +24,17 @@ class MealLogService
     public function __construct(private readonly FoodResolver $resolver) {}
 
     /**
+     * Whether the personal library already answers this raw term — by a name or
+     * by an alias it learned from a past search. When it does, tier 1 will
+     * surface the item and the term does not need translating for USDA, so a
+     * foreign word searched a second time finds its item without a translation.
+     */
+    public function libraryKnows(string $term): bool
+    {
+        return $this->resolver->libraryMatches(new SearchTerms($term)) !== [];
+    }
+
+    /**
      * Build a pending payload for one or two search terms. The English and
      * native names are carried through so the commit step can store both on a
      * promoted library item, or backfill the one a matched item is missing.
@@ -214,11 +225,19 @@ class MealLogService
      * carried through the session, never from the form: the caller passes the
      * candidate array straight from the pending payload.
      *
+     * A foreign word the person searched by ({@see $searchedAs}) — Cyrillic, say,
+     * when the chosen candidate is a USDA record named in English — is kept as an
+     * alias of the item, so the same word finds it in the library next time
+     * without a translation. It is carried as its own argument rather than folded
+     * into {@see $terms}, because $terms names the item (its English label) and a
+     * native term put there would become the item's name instead of an alias.
+     *
      * @param  array<string, mixed>  $candidate  one entry from a resolver payload
+     * @param  string|null  $searchedAs  a foreign search term to remember as an alias
      *
      * @throws \InvalidArgumentException when the candidate is an estimate
      */
-    public function promoteCandidate(array $candidate, SearchTerms $terms): int
+    public function promoteCandidate(array $candidate, SearchTerms $terms, ?string $searchedAs = null): int
     {
         $source = NutrientSource::from((string) $candidate['source']);
 
@@ -226,10 +245,11 @@ class MealLogService
             throw new \InvalidArgumentException('An estimate cannot become a recipe ingredient.');
         }
 
-        // Already in the library: return the id and remember the phrasing.
+        // Already in the library: reuse the id and remember the phrasing.
         $claimedItemId = is_int($candidate['food_item_id'] ?? null) ? $candidate['food_item_id'] : null;
         if ($claimedItemId !== null && FoodItem::query()->whereKey($claimedItemId)->exists()) {
             $this->recordAliases($claimedItemId, $terms);
+            $this->recordForeignAlias($claimedItemId, $searchedAs);
 
             return $claimedItemId;
         }
@@ -244,7 +264,25 @@ class MealLogService
 
         $externalId = is_string($candidate['external_id'] ?? null) ? $candidate['external_id'] : null;
 
-        return $this->promoteToLibrary($terms->display(), $terms->alt(), $externalId, $profile, $source);
+        $itemId = $this->promoteToLibrary($terms->display(), $terms->alt(), $externalId, $profile, $source);
+        $this->recordForeignAlias($itemId, $searchedAs);
+
+        return $itemId;
+    }
+
+    /**
+     * Remember a foreign word a person searched by as an alias of the item they
+     * chose, through the same bounded, deduplicating path a confirmed recognition
+     * takes. A null or empty term, or one the item already carries as a name or
+     * alias, adds nothing.
+     */
+    private function recordForeignAlias(int $foodItemId, ?string $searchedAs): void
+    {
+        if ($searchedAs === null || trim($searchedAs) === '') {
+            return;
+        }
+
+        $this->recordAliases($foodItemId, new SearchTerms($searchedAs));
     }
 
     private function promoteToLibrary(string $name, ?string $altName, ?string $externalId, NutrientProfile $profile, NutrientSource $source): int

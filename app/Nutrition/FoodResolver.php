@@ -31,6 +31,20 @@ class FoodResolver
         private readonly array $remoteSources,
     ) {}
 
+    /**
+     * Tier 1 alone: the personal library's candidates for a term, without
+     * touching the external sources. Used to decide whether a foreign word even
+     * needs translating — a word the library already knows (by name or by an
+     * alias it learned from a past search) is answered here, and USDA is never
+     * asked, so the translator is never called.
+     *
+     * @return list<NutrientMatch>
+     */
+    public function libraryMatches(SearchTerms $terms): array
+    {
+        return $this->library->matchesFor($terms);
+    }
+
     public function resolve(SearchTerms $terms, ?NutrientProfile $estimatedFallback = null): Resolution
     {
         // Tier 1: the personal library, a local query, always first. Matched

@@ -55,13 +55,16 @@ class RecipeIngredientController extends Controller
         $request->session()->put(RecipeDraft::SESSION_KEY, $draft->toArray());
 
         // A foreign ingredient name gets an English term for USDA, which indexes
-        // English and is the source that actually covers raw ingredients. The
-        // person still sees and stores the name they typed (it becomes the native
-        // term, which is what display() shows); only USDA is searched in English.
+        // English and is the source that actually covers raw ingredients. Only
+        // USDA is searched in English; the native term is carried alongside.
         // Fails open: no translation just means USDA is searched with the
         // original term, and the library and Open Food Facts answer regardless.
+        //
+        // A word the library already knows — including one it learned as an alias
+        // from a past search — is answered by tier 1, so it is not translated at
+        // all: the translator is not consulted for a word already in hand.
         $query = $validated['query'];
-        $english = $translator->toEnglish($query);
+        $english = $log->libraryKnows($query) ? null : $translator->toEnglish($query);
         $terms = $english !== null
             ? new SearchTerms(english: $english, native: $query)
             : new SearchTerms($query);
@@ -74,6 +77,10 @@ class RecipeIngredientController extends Controller
 
         $request->session()->put(self::CANDIDATES_KEY, [
             'query' => $validated['query'],
+            // The foreign term, present only when it was translated — the word to
+            // learn as an alias if a candidate is chosen. Null for a Latin query,
+            // whose USDA label already covers it, or a word the library knew.
+            'native' => $terms->native,
             'candidates' => $pending['candidates'],
         ]);
 
@@ -136,8 +143,13 @@ class RecipeIngredientController extends Controller
 
         $label = is_string($candidate['label'] ?? null) ? $candidate['label'] : (string) ($search['query'] ?? '');
 
+        // The foreign word the search was translated from, if any: learned as an
+        // alias of the chosen item so the same word finds it in the library next
+        // time, without a translation.
+        $searchedAs = is_string($search['native'] ?? null) ? $search['native'] : null;
+
         try {
-            $itemId = $log->promoteCandidate($candidate, new SearchTerms($label));
+            $itemId = $log->promoteCandidate($candidate, new SearchTerms($label), $searchedAs);
         } catch (InvalidArgumentException) {
             // An estimate slipped through; it has no honest number to add.
             return $this->backToForm($draft)->withErrors(['candidate' => __('library.ingredient_estimate_refused')]);

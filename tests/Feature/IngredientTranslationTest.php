@@ -104,6 +104,43 @@ class IngredientTranslationTest extends TestCase
         $this->assertSame(28.0, $item->carbs_g_per_100g);
     }
 
+    public function test_a_foreign_word_that_led_to_a_choice_is_found_next_time_without_translating(): void
+    {
+        // First search: an empty library, so 'рис' is translated to 'rice' for
+        // USDA, and the chosen candidate is promoted into the library.
+        $this->translatorReturns('рис', 'rice');
+        $this->fakeUsda(fn (string $query): array => $query === 'rice' ? $this->riceFood() : []);
+
+        $this->post(route('library.recipe.ingredient.search'), ['query' => 'рис']);
+        $this->post(route('library.recipe.ingredient.add'), ['candidate' => 0, 'grams' => 150]);
+
+        $item = FoodItem::query()->where('origin', ProfileOrigin::Usda->value)->sole();
+
+        // The Cyrillic word the person searched by is now an alias of that item —
+        // the English USDA label stays its name; the foreign word is learned.
+        $this->assertSame('Rice, white, cooked', $item->name);
+        $this->assertTrue($item->aliases()->where('name', 'рис')->exists());
+
+        // Second search: bind a translator that fails the test if it is consulted
+        // at all. The library already knows 'рис', so tier 1 answers and the
+        // translator is never reached.
+        $this->app->instance(IngredientTranslator::class, new class implements IngredientTranslator
+        {
+            public function toEnglish(string $term): ?string
+            {
+                throw new \RuntimeException('the translator must not be consulted for a word already in the library');
+            }
+        });
+
+        $this->post(route('library.recipe.ingredient.search'), ['query' => 'рис'])
+            ->assertRedirect(route('library.recipe.ingredient.choose'));
+
+        // Found in the library by the learned alias, with no translation.
+        $this->get(route('library.recipe.ingredient.choose'))
+            ->assertOk()
+            ->assertSee('Rice, white, cooked');
+    }
+
     public function test_a_latin_query_is_not_translated(): void
     {
         // No seed for "rice"; a Latin term must not be sent to the translator at
