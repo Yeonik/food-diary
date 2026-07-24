@@ -110,6 +110,7 @@ class FoodItemController extends Controller
             'recipe' => null,
             'ingredients' => FoodItem::query()->orderBy('name')->get(),
             'total' => null,
+            'incomplete' => false,
             // No ingredients yet, so no raw sum to compare against.
             'rawSum' => null,
         ]);
@@ -154,19 +155,27 @@ class FoodItemController extends Controller
         // What the ingredients currently come to, per 100 g. A saved recipe
         // cannot hold a cycle — saving one is refused — but the guard stays,
         // because a screen should not be the thing that fails.
+        $incomplete = false;
+
         try {
             $total = $calculator->profileFor($item->load('ingredients.ingredient'));
-        } catch (RecipeCycleException|RecipeIncompleteException) {
-            // No total to show: either a cycle, or a cooked weight missing here
-            // or in a recipe this one is built on. The form still opens so the
-            // weight can be supplied.
+        } catch (RecipeCycleException) {
+            // No total, because the ingredients cycle. The form still opens.
             $total = null;
+        } catch (RecipeIncompleteException) {
+            // No total, because a cooked weight is missing — this recipe's, or
+            // one it is built on. Distinguished from a cycle so the screen can
+            // say which, and so it reads as "fill this in", not "something is
+            // wrong".
+            $total = null;
+            $incomplete = true;
         }
 
         return view('library.recipe', [
             'recipe' => $item->load('ingredients'),
             'ingredients' => FoodItem::query()->where('id', '!=', $item->id)->orderBy('name')->get(),
             'total' => $total,
+            'incomplete' => $incomplete,
             // The raw ingredient total, shown beside the cooked-weight field as a
             // reference — not a constraint. A dish can weigh more or less than
             // this, but seeing 300 g of ingredients makes a mistyped 30 g cooked

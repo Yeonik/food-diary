@@ -64,6 +64,14 @@
                         : __('library.cooked_weight_hint')"
                      required />
 
+            @if ($incomplete ?? false)
+                {{-- A recipe from before the cooked weight existed, opened to be
+                     completed. It shows no total on purpose — there is no honest
+                     one until the weight above is filled in — and says so rather
+                     than leaving the space blank. --}}
+                <p class="caption">{{ __('library.incomplete_notice') }}</p>
+            @endif
+
             @if ($total !== null)
                 {{-- What the ingredients above come to. A recipe stores no numbers
                      of its own; these are computed from them, which is why editing

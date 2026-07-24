@@ -40,9 +40,20 @@
                                 <span class="k">{{ \App\Support\Format::kcal($kcal) }} {{ __('nutrition.kcal') }} / {{ __('nutrition.per_100g') }}</span>
                             @endif
 
-                            @if ($item->isRecipe())
-                                {{-- A recipe's numbers come from its ingredients — that is
-                                     its provenance, and it is a verified one. --}}
+                            @if ($item->isRecipe() && $item->needsCookedWeight())
+                                {{-- No cooked weight, so no honest number and no
+                                     check. A recipe defined before this field
+                                     existed lands here until its owner weighs the
+                                     dish; the dashed style is the same one an
+                                     estimate wears — not verified, not alarming. --}}
+                                <a class="dash" href="{{ route('library.recipe.edit', $item) }}">
+                                    <span aria-hidden="true">≈</span>{{ __('library.needs_cooked_weight') }}
+                                </a>
+                            @elseif ($item->isRecipe())
+                                {{-- A recipe's numbers come from its ingredients,
+                                     divided by the cooked weight the person
+                                     entered — every figure is theirs, so it is a
+                                     verified provenance. --}}
                                 <span class="chip"><span aria-hidden="true">✓</span>{{ __('library.recipe') }}</span>
                             @elseif ($item->origin)
                                 <x-source-chip :source="$item->origin" />

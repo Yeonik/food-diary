@@ -9,6 +9,8 @@ return [
     'new_product' => 'New product',
     'define_recipe' => 'Define a recipe',
     'recipe' => 'Recipe',
+    'needs_cooked_weight' => 'Needs a cooked weight',
+    'incomplete_notice' => 'This recipe was defined before cooked weight was recorded, so it shows no numbers yet. Weigh the finished dish and enter it above, and its profile will be computed from your ingredients.',
     'empty_title' => 'The library is empty',
     'empty_body' => 'Products appear here after you add one by hand or confirm one from Open Food Facts.',
     'confirm_delete' => 'Remove this item?',
