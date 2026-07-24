@@ -43,8 +43,27 @@ class MealLogService
      */
     public function pendingForTerms(SearchTerms $terms, float $grams = 100.0, ?NutrientProfile $estimate = null): array
     {
-        $resolution = $this->resolver->resolve($terms, $estimate);
+        return $this->payloadFrom($this->resolver->resolve($terms, $estimate), $terms, $grams);
+    }
 
+    /**
+     * Build a pending payload for a recipe ingredient: resolved against the raw-
+     * food sources only (personal library and USDA), with Open Food Facts left
+     * out. A recipe ingredient is a whole food, not a packaged product, so the
+     * catalogue of packages is noise here and is not consulted.
+     *
+     * @return array{name: string, grams: float, english: string, native: string|null, candidates: list<array<string, mixed>>}
+     */
+    public function pendingForIngredient(SearchTerms $terms, float $grams = 100.0): array
+    {
+        return $this->payloadFrom($this->resolver->resolveForIngredient($terms), $terms, $grams);
+    }
+
+    /**
+     * @return array{name: string, grams: float, english: string, native: string|null, candidates: list<array<string, mixed>>}
+     */
+    private function payloadFrom(Resolution $resolution, SearchTerms $terms, float $grams): array
+    {
         $candidates = [];
         foreach ($resolution->candidates() as $match) {
             $candidates[] = $this->encodeCandidate($match);

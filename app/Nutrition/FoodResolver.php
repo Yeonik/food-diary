@@ -47,6 +47,31 @@ class FoodResolver
 
     public function resolve(SearchTerms $terms, ?NutrientProfile $estimatedFallback = null): Resolution
     {
+        return $this->resolveWith($this->remoteSources, $terms, $estimatedFallback);
+    }
+
+    /**
+     * Resolve for a recipe ingredient: the personal library and USDA only, no
+     * estimate. Open Food Facts is a catalogue of packaged products — right when
+     * logging a meal (you eat packaged things), but noise for a raw ingredient,
+     * where a bag of crisps is not "potato". USDA's whole and basic foods and the
+     * person's own library are the sources a recipe is built from.
+     */
+    public function resolveForIngredient(SearchTerms $terms): Resolution
+    {
+        $rawFoodSources = array_values(array_filter(
+            $this->remoteSources,
+            static fn (RemoteNutritionSource $source): bool => $source->source() !== NutrientSource::OpenFoodFacts,
+        ));
+
+        return $this->resolveWith($rawFoodSources, $terms, null);
+    }
+
+    /**
+     * @param  list<RemoteNutritionSource>  $remoteSources
+     */
+    private function resolveWith(array $remoteSources, SearchTerms $terms, ?NutrientProfile $estimatedFallback): Resolution
+    {
         // Tier 1: the personal library, a local query, always first. Matched
         // loosely on shared tokens across each item's names and aliases, so an
         // item survives the model rephrasing the package; capped and ranked
@@ -55,7 +80,7 @@ class FoodResolver
 
         // Tier 2: the external APIs, fired concurrently so their latencies
         // overlap instead of adding up.
-        [$apiMatches, $notices] = $this->queryRemotes($terms);
+        [$apiMatches, $notices] = $this->queryRemotes($remoteSources, $terms);
 
         $unresolved = $libraryMatches === [] && $apiMatches === [];
 
@@ -77,18 +102,19 @@ class FoodResolver
     }
 
     /**
+     * @param  list<RemoteNutritionSource>  $remoteSources
      * @return array{0: list<NutrientMatch>, 1: list<ResolutionNotice>}
      */
-    private function queryRemotes(SearchTerms $terms): array
+    private function queryRemotes(array $remoteSources, SearchTerms $terms): array
     {
-        if ($this->remoteSources === []) {
+        if ($remoteSources === []) {
             return [[], []];
         }
 
         // Each source contributes one or more requests (Open Food Facts fires
         // two — one per language); keys stay unique with a per-source index.
         $plan = [];
-        foreach ($this->remoteSources as $source) {
+        foreach ($remoteSources as $source) {
             $plan[] = ['source' => $source, 'requests' => $source->requestsFor($terms)];
         }
 

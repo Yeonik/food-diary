@@ -69,11 +69,12 @@ class RecipeIngredientController extends Controller
             ? new SearchTerms(english: $english, native: $query)
             : new SearchTerms($query);
 
-        // The same resolution the manual path uses: library first, then USDA and
-        // Open Food Facts in parallel, nothing auto-selected. No estimate is
-        // offered here — an ingredient must be a real number — so no fallback is
-        // passed.
-        $pending = $log->pendingForTerms($terms);
+        // Resolved against the raw-food sources only: the personal library first,
+        // then USDA. Open Food Facts is left out — a recipe ingredient is a whole
+        // food, not a packaged product, so the catalogue of packages is noise.
+        // Nothing is auto-selected, and no estimate is offered — an ingredient
+        // must be a real number.
+        $pending = $log->pendingForIngredient($terms);
 
         $request->session()->put(self::CANDIDATES_KEY, [
             'query' => $validated['query'],

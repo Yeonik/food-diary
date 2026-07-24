@@ -154,6 +154,37 @@ class RecipeIngredientSearchTest extends TestCase
             && str_contains((string) ($request->data()['dataType'] ?? ''), 'SR Legacy'));
     }
 
+    public function test_ingredient_search_offers_no_open_food_facts_candidates(): void
+    {
+        // Open Food Facts is a catalogue of packaged products — a bag of crisps
+        // is not the raw "potato" a recipe is built from. It has no place in the
+        // ingredient search and is not even consulted.
+        Http::fake([
+            'api.nal.usda.gov/*' => Http::response(['foods' => [
+                $this->usdaFood('Potatoes, flesh and skin, raw', 77, 2.0, 0.1, 17, 170026),
+            ]]),
+            'world.openfoodfacts.org/*' => Http::response(['products' => [[
+                'code' => '5000',
+                'product_name' => 'Potato crisps, salted',
+                'nutriments' => [
+                    'energy-kcal_100g' => 536, 'proteins_100g' => 6.6,
+                    'fat_100g' => 34, 'carbohydrates_100g' => 53,
+                ],
+            ]]]),
+        ]);
+
+        $this->search('potato');
+
+        $this->get(route('library.recipe.ingredient.choose'))
+            ->assertOk()
+            ->assertSee('Potatoes, flesh and skin, raw')
+            // The packaged product is never offered as an ingredient.
+            ->assertDontSee('Potato crisps, salted');
+
+        // And Open Food Facts was not called at all — the noise never left home.
+        Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), 'openfoodfacts'));
+    }
+
     public function test_the_numbers_come_from_the_source_not_the_form(): void
     {
         $this->fakeUsdaReturns('Butter', 717, 0.85, 81, 0.06);
