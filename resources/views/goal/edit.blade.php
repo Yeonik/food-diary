@@ -131,6 +131,16 @@
             </x-card>
         @endcan
 
+        @can(\App\Providers\AppServiceProvider::ADMINISTER_ACCOUNTS)
+            <x-card class="set-row" style="margin-bottom:16px">
+                <span>
+                    <span class="t">{{ __('users.settings_link') }}</span>
+                    <span class="s" style="display:block">{{ __('users.settings_hint') }}</span>
+                </span>
+                <x-button variant="secondary" :href="route('users.index')">{{ __('users.open') }}</x-button>
+            </x-card>
+        @endcan
+
         {{-- Language. Two submit buttons post the choice; it is saved in a cookie
              and the redirect back re-renders at once. Works without JavaScript. --}}
         <x-card class="set-row">

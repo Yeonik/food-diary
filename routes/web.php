@@ -14,6 +14,7 @@ use App\Http\Controllers\ManualEntryController;
 use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\MealPhotoController;
 use App\Http\Controllers\PendingLogController;
+use App\Http\Controllers\UserAdminController;
 use App\Http\Controllers\WeightController;
 use App\Providers\AppServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -87,6 +88,14 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/invites', [InviteController::class, 'index'])->name('invites.index');
         Route::post('/invites', [InviteController::class, 'store'])->name('invites.store');
         Route::delete('/invites/{invite}', [InviteController::class, 'destroy'])->name('invites.destroy');
+    });
+
+    // The accounts that already exist — a separate ability from invitations,
+    // because deciding who may join and reaching into an account that is already
+    // here are different powers. Same shape as the group above: the gate wraps
+    // the group, so a route added here later is behind it by where it lives.
+    Route::middleware('can:'.AppServiceProvider::ADMINISTER_ACCOUNTS)->group(function (): void {
+        Route::get('/users', [UserAdminController::class, 'index'])->name('users.index');
     });
 
 });
