@@ -49,7 +49,11 @@
         // to the sign-in screen, so offering them would be a rail that goes
         // nowhere. Read from the guard, not from the route name, so a screen
         // added later cannot forget to say it is a guest screen.
-        $guest = ! auth()->check();
+        //
+        // A suspended account is in exactly that position while signed in: every
+        // section answers with the notice, so the same reasoning closes the rail
+        // rather than a second condition being invented for it.
+        $nowhereToGo = ! auth()->check() || auth()->user()?->isSuspended() === true;
     @endphp
 
     <div class="app">
@@ -59,7 +63,7 @@
                 <div class="logo" aria-hidden="true">{{ mb_substr(__('nav.brand'), 0, 1) }}</div>
                 <b>{{ __('nav.brand') }}</b>
             </div>
-            @unless ($guest)
+            @unless ($nowhereToGo)
                 @foreach ($nav as $item)
                     <x-nav-item :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
                 @endforeach
@@ -113,7 +117,7 @@
             </main>
 
             {{-- Mobile: bottom tab bar --}}
-            @unless ($guest)
+            @unless ($nowhereToGo)
                 <nav class="tabbar" aria-label="{{ __('nav.brand') }}">
                     @foreach ($nav as $item)
                         <x-nav-item layout="tab" :icon="$item['icon']" :label="$item['label']" :route="$item['route']" :match="$item['match']" />
@@ -148,7 +152,7 @@
          by Esc (native) or a click outside. Without JS the same actions are plain
          links to /log/manual, so the flow still works. It posts to a signed-in
          route, so a guest screen does not carry it. --}}
-    @unless ($guest)
+    @unless ($nowhereToGo)
     <dialog id="manual-dialog" class="modal">
         <form method="post" action="{{ route('log.manual.store') }}">
             @csrf

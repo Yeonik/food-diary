@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\BlockSuspended;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -34,6 +35,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // sign-in screen, so it too is localised. The choice cookie rides through
         // the standard cookie encryption like any other.
         $middleware->appendToGroup('web', SetLocale::class);
+
+        // A suspended account is walled here rather than at the sign-in screen,
+        // and on the whole web group rather than on the application's own route
+        // group — so Fortify's routes are behind it too, and a route added
+        // anywhere later is closed to a suspended account by default. See the
+        // middleware for why the refusal is not given to the credentials.
+        $middleware->appendToGroup('web', BlockSuspended::class);
 
         // Where an unauthenticated request is sent. Without this Laravel looks
         // for a route named `login`, which Fortify does provide — naming it here
