@@ -104,15 +104,31 @@ differently, so no reference value can be right for your version. A library item
 is therefore one of two things:
 
 - a **direct** nutrient profile (per 100 g), or
-- a **recipe** — a list of other library items with weights, from which the
-  profile is computed. Ingredients are exactly what the databases *do* cover.
+- a **recipe** — a list of other library items with weights, plus the weight of
+  the finished dish, from which the profile is computed. Ingredients are exactly
+  what the databases *do* cover.
 
-Recipes may reference other recipes; cycles are rejected rather than followed.
+The **cooked weight** is what the numbers are per 100 g of, and it is required —
+not a convenience. The person weighs and eats the cooked dish, which is not the
+sum of its raw ingredients: rice absorbs water, a roast boils it off. Dividing
+the batch totals by the raw sum, which is what the app did until v0.5.0, silently
+overstated a plov and understated a roast — while stamping the result verified,
+a number the person supplied the parts of but never the whole of. So a recipe
+with no cooked weight yields no number at all rather than falling back to the raw
+sum: it is shown in the library as needing a weight, and it is not offered as
+something to log until it has one. There is no optional field with the old
+divisor behind it, because that would be the same wrong number wearing a
+different badge.
+
+Recipes may reference other recipes; cycles are rejected rather than followed,
+and an ingredient recipe that is itself missing a cooked weight makes the whole
+thing incomplete until it is supplied.
 
 A logged entry stores a **snapshot** of the numbers as they were at the moment of
-logging. Correcting a library item or editing a recipe later changes future
-entries only — last month's totals never silently move. Both directions are
-covered by `tests/Feature/SnapshotImmutabilityTest.php`.
+logging. Correcting a library item, editing a recipe, or supplying a recipe's
+cooked weight later changes future entries only — last month's totals never
+silently move. Every direction is covered by
+`tests/Feature/SnapshotImmutabilityTest.php`.
 
 ## Deliberate interface choices
 
@@ -429,7 +445,8 @@ app/Nutrition/
   Sources/UsdaSource.php              tier 2
   Sources/OpenFoodFactsSource.php     tier 2
   FoodResolver.php                    walks the ladder, USDA + OFF in parallel
-  RecipeCalculator.php                composes a profile from ingredients
+  RecipeCalculator.php                composes a profile from ingredients,
+                                      divided by the cooked weight
   RecognitionQuota.php                a day's allowance, per account
   PhotoPreparer.php                   EXIF strip, resize, content validation
 app/Models/Concerns/BelongsToUser.php the owner scope, on every domain model
