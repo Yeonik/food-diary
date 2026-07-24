@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\RecipeIngredientController;
 use App\Models\FoodItem;
 use App\Nutrition\FoodItemKind;
 use App\Nutrition\MealLogService;
@@ -59,11 +60,12 @@ class RecipeIngredientSearchTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function usdaFood(string $description, float $kcal, float $protein, float $fat, float $carbs, int $fdcId): array
+    private function usdaFood(string $description, float $kcal, float $protein, float $fat, float $carbs, int $fdcId, string $dataType = 'SR Legacy'): array
     {
         return [
             'description' => $description,
             'fdcId' => $fdcId,
+            'dataType' => $dataType,
             'foodNutrients' => [
                 ['nutrientNumber' => '208', 'value' => $kcal],
                 ['nutrientNumber' => '203', 'value' => $protein],
@@ -152,6 +154,39 @@ class RecipeIngredientSearchTest extends TestCase
         Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'nal.usda.gov')
             && str_contains((string) ($request->data()['dataType'] ?? ''), 'Foundation')
             && str_contains((string) ($request->data()['dataType'] ?? ''), 'SR Legacy'));
+    }
+
+    public function test_the_raw_base_food_is_ranked_above_its_derivatives(): void
+    {
+        // USDA's own order for "potato" puts derivatives first and the raw base
+        // food far down (about twentieth in the live API). This is that order,
+        // shrunk: the raw potato arrives last, behind bread, flour, a dish and a
+        // snack. The re-rank must lift it to the top.
+        Http::fake([
+            'api.nal.usda.gov/*' => Http::response(['foods' => [
+                $this->usdaFood('Bread, potato', 266, 8, 3.2, 51, 167943),
+                $this->usdaFood('Flour, potato', 357, 6.9, 0.3, 83, 2261422, 'Foundation'),
+                $this->usdaFood('Potato pancakes', 268, 5.4, 14, 29, 170092),
+                $this->usdaFood('Babyfood, potatoes, toddler', 68, 1.9, 0.5, 14, 173508),
+                $this->usdaFood('Snacks, potato chips, plain', 536, 7, 34, 53, 168853),
+                $this->usdaFood('Potatoes, boiled, without salt', 87, 1.9, 0.1, 20, 170438),
+                $this->usdaFood('Potatoes, flesh and skin, raw', 77, 2.0, 0.1, 17, 170026),
+            ]]),
+            'world.openfoodfacts.org/*' => Http::response(['products' => []]),
+        ]);
+
+        $this->search('potato');
+
+        $candidates = session(RecipeIngredientController::CANDIDATES_KEY)['candidates'];
+
+        // The raw base food is first; boiled (also a base food) second; the
+        // derivatives sit below or are trimmed off the short list entirely.
+        $this->assertSame('Potatoes, flesh and skin, raw', $candidates[0]['label']);
+        $this->assertSame('Potatoes, boiled, without salt', $candidates[1]['label']);
+
+        // And its number is USDA's own for the raw potato — re-ranking moved the
+        // order, not the figure.
+        $this->assertSame(77.0, $candidates[0]['kcal']);
     }
 
     public function test_ingredient_search_offers_no_open_food_facts_candidates(): void

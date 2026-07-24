@@ -168,7 +168,7 @@ class FoodResolver
                 }
 
                 $anySuccess = true;
-                $sourceMatches = [...$sourceMatches, ...$source->parse($response)];
+                $sourceMatches = [...$sourceMatches, ...$source->parse($response, $terms)];
             }
 
             // One notice per source, and only when none of its lookups worked —

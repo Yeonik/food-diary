@@ -32,9 +32,12 @@ interface RemoteNutritionSource extends NutritionSource
     public function requestsFor(SearchTerms $terms): array;
 
     /**
-     * Turn a successful response into candidate matches.
+     * Turn a successful response into candidate matches. The terms that were
+     * searched are passed too, so a source can order its own results against
+     * them — USDA ranks the raw base food above its derivatives this way. The
+     * numbers are never touched; only the order is.
      *
      * @return list<NutrientMatch>
      */
-    public function parse(Response $response): array;
+    public function parse(Response $response, SearchTerms $terms): array;
 }

@@ -9,6 +9,7 @@ use App\Nutrition\Contracts\IngredientTranslator;
 use App\Nutrition\FakeIngredientTranslator;
 use App\Nutrition\FoodResolver;
 use App\Nutrition\GeminiIngredientTranslator;
+use App\Nutrition\NameMatcher;
 use App\Nutrition\PhotoPreparer;
 use App\Nutrition\Recognisers\FakeRecogniser;
 use App\Nutrition\Recognisers\GeminiRecogniser;
@@ -82,6 +83,7 @@ class NutritionServiceProvider extends ServiceProvider
                 new UsdaSource(
                     $this->string('nutrition.usda.base_url'),
                     $this->nullableString('nutrition.usda.key'),
+                    $app->make(NameMatcher::class),
                 ),
                 $app->make(OpenFoodFactsSource::class),
             ],

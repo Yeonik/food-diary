@@ -122,13 +122,17 @@ class OpenFoodFactsSource implements RemoteNutritionSource
             ->timeout($request->timeoutSeconds)
             ->get($request->url, $request->query);
 
-        return $response->successful() ? $this->parse($response) : [];
+        return $response->successful() ? $this->parse($response, new SearchTerms($name)) : [];
     }
 
     /**
+     * Open Food Facts returns products in its own relevance order, which is kept
+     * as is — a packaged catalogue has no raw-versus-derivative structure to
+     * re-rank. The terms are accepted to satisfy the contract.
+     *
      * @return list<NutrientMatch>
      */
-    public function parse(Response $response): array
+    public function parse(Response $response, SearchTerms $terms): array
     {
         /** @var array<int, mixed> $products */
         $products = $response->json('products') ?? [];
