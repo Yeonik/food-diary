@@ -9,10 +9,12 @@ use App\Nutrition\Contracts\IngredientTranslator;
 use App\Nutrition\FakeIngredientTranslator;
 use App\Nutrition\GeminiIngredientTranslator;
 use App\Nutrition\ProfileOrigin;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 /**
@@ -211,5 +213,70 @@ class IngredientTranslationTest extends TestCase
         );
 
         $this->assertNull($translator->toEnglish('рис'));
+    }
+
+    private function geminiTranslator(): GeminiIngredientTranslator
+    {
+        return new GeminiIngredientTranslator(
+            'https://generativelanguage.googleapis.com/v1beta',
+            'gemini-x',
+            'a-key',
+            app(Repository::class),
+        );
+    }
+
+    /**
+     * A successful Gemini response carrying $english.
+     *
+     * @return PromiseInterface
+     */
+    private function geminiOk(string $english)
+    {
+        return Http::response(['candidates' => [['content' => ['parts' => [['text' => $english]]]]]]);
+    }
+
+    public function test_a_busy_model_is_retried_before_the_translation_gives_up(): void
+    {
+        Sleep::fake();
+
+        // The free tier answers 503/429 in bursts; the call retries and succeeds
+        // on the third attempt rather than failing open on the first blip.
+        Http::fakeSequence('generativelanguage.googleapis.com/*')
+            ->push(['error' => 'overloaded'], 503)
+            ->push(['error' => 'rate limited'], 429)
+            ->pushResponse($this->geminiOk('rice'));
+
+        $this->assertSame('rice', $this->geminiTranslator()->toEnglish('рис'));
+        Http::assertSentCount(3);
+    }
+
+    public function test_a_failed_translation_is_not_cached_as_a_miss(): void
+    {
+        Sleep::fake();
+
+        // The model is down for the whole call.
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['error' => 'down'], 503)]);
+
+        $translator = $this->geminiTranslator();
+
+        // Fails open both times — and the second search tries the network afresh
+        // rather than being served a cached miss. Three attempts per call, twice,
+        // is six requests: proof the failure was never written to the cache.
+        $this->assertNull($translator->toEnglish('рис'));
+        $this->assertNull($translator->toEnglish('рис'));
+        Http::assertSentCount(6);
+    }
+
+    public function test_a_successful_translation_is_cached(): void
+    {
+        Http::fake(['generativelanguage.googleapis.com/*' => $this->geminiOk('rice')]);
+
+        $translator = $this->geminiTranslator();
+
+        // Translated once, then reused from the cache — the second search makes
+        // no call. This is the whole point of caching: the success is kept.
+        $this->assertSame('rice', $translator->toEnglish('рис'));
+        $this->assertSame('rice', $translator->toEnglish('рис'));
+        Http::assertSentCount(1);
     }
 }
